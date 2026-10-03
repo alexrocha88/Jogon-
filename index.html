@@ -4,27 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14151b">
-<title>Jogon!</title>
+<title>Jogos Zerados</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --bg: #14151b;
-    --bg-raised: #1b1d25;
-    --bg-card: #1f212b;
-    --bg-hover: #262835;
-    --line: #2c2e3a;
-    --text: #edeef2;
-    --text-muted: #9296a8;
-    --text-faint: #5c5f6f;
-    --accent: #f2b632;
-    --accent-dim: #a8822c;
-    --teal: #5ec8c0;
+    --bg: #0e0d12;
+    --bg-raised: #17151e;
+    --bg-card: #1d1a25;
+    --bg-hover: #27222f;
+    --line: #322c3c;
+    --text: #f3f0f8;
+    --text-muted: #9c94ab;
+    --text-faint: #635a73;
+    --accent: #ff6b4a;
+    --accent-dim: #b84f36;
+    --teal: #27d9c6;
     --green: #8fd14f;
-    --red: #e5695f;
-    --orange: #e0975a;
+    --red: #ff5470;
+    --orange: #ffb020;
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
@@ -120,12 +120,12 @@
     font-family: var(--font-mono); font-size: 11px; font-weight: 600;
     padding: 2px 7px; border-radius: 5px; white-space: nowrap;
   }
-  .priority-alta { color: var(--accent); background: rgba(242,182,50,.14); }
-  .priority-media { color: var(--teal); background: rgba(94,200,192,.14); }
-  .priority-baixa { color: var(--text-muted); background: rgba(146,150,168,.12); }
+  .priority-agora { color: var(--accent); background: rgba(255,107,74,.16); }
+  .priority-depois { color: var(--teal); background: rgba(39,217,198,.14); }
+  .priority-sem-pressa { color: var(--text-muted); background: rgba(146,150,168,.12); }
 
   /* ---- Cover thumbnails ---- */
-  .row-cover, .backlog-cover {
+  .backlog-cover {
     width: 36px; height: 48px; object-fit: cover; border-radius: 5px;
     flex-shrink: 0; background: var(--bg-hover); border: 1px solid var(--line);
   }
@@ -249,43 +249,67 @@
   .btn-danger:hover { background: rgba(229,105,95,.1); border-color: var(--red); }
   .count-note { font-size: 12.5px; color: var(--text-faint); margin: -6px 0 14px; }
 
-  /* ---- Game list ---- */
-  .list { display: flex; flex-direction: column; gap: 8px; }
-  .row {
-    background: var(--bg-card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    cursor: pointer;
-  }
-  .row:hover { border-color: #3a3d4d; }
-  .row-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  /* ---- Game shelf (grid) ---- */
   .plat-tag {
     font-family: var(--font-mono);
     font-size: 10.5px;
     color: var(--teal);
-    background: rgba(94,200,192,.1);
-    border: 1px solid rgba(94,200,192,.25);
+    background: rgba(39,217,198,.1);
+    border: 1px solid rgba(39,217,198,.25);
     padding: 3px 7px;
     border-radius: 5px;
     white-space: nowrap;
   }
-  .row-title { font-weight: 600; font-size: 15px; flex: 1 1 180px; min-width: 0; }
-  .row-title .dlc { font-size: 10.5px; color: var(--text-faint); font-weight: 500; margin-left: 6px; }
-  .row-date { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); white-space: nowrap; }
-  .scores { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-  .score-chip { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-  .score-chip b { color: var(--text); }
   .grade-badge {
     font-family: var(--font-mono); font-weight: 600; font-size: 12.5px;
     border-radius: 6px; padding: 3px 8px; min-width: 30px; text-align: center;
   }
-  .chevron { color: var(--text-faint); transition: transform .15s; flex-shrink: 0; }
-  .row.open .chevron { transform: rotate(90deg); }
-  .row-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
-  .row.open .row-detail { display: block; }
-  .row-comment { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; margin: 0 0 12px; white-space: pre-wrap; }
-  .row-actions { display: flex; gap: 8px; }
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+    gap: 16px;
+  }
+  .game-card {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; cursor: pointer; position: relative;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  .game-card:hover { transform: translateY(-3px); border-color: var(--accent-dim); box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+  .cover-wrap {
+    aspect-ratio: 3 / 4; position: relative; overflow: hidden;
+    background: linear-gradient(160deg, var(--bg-hover), var(--bg-card));
+  }
+  .cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover-fallback {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 12px; text-align: center; font-family: var(--font-display); font-weight: 700;
+    font-size: 12.5px; color: var(--text-faint); line-height: 1.3;
+  }
+  .cover-grade {
+    position: absolute; top: 7px; left: 7px; font-family: var(--font-mono); font-weight: 700;
+    font-size: 11px; padding: 2px 7px; border-radius: 6px; backdrop-filter: blur(3px);
+  }
+  .card-delete {
+    position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(14,13,18,.78); border: 1px solid rgba(255,255,255,.14); color: var(--text-muted);
+    font-size: 13px; line-height: 20px; text-align: center; cursor: pointer; opacity: 0;
+    transition: opacity .15s;
+  }
+  .game-card:hover .card-delete, .game-card:focus-within .card-delete { opacity: 1; }
+  .card-delete:hover { color: var(--red); border-color: var(--red); }
+  .card-body { padding: 9px 10px 11px; }
+  .card-title {
+    font-weight: 600; font-size: 13px; line-height: 1.3; margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    min-height: 2.6em;
+  }
+  .card-title .dlc { font-size: 9.5px; color: var(--text-faint); font-weight: 500; margin-left: 4px; }
+  .card-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .card-plat {
+    font-family: var(--font-mono); font-size: 9.5px; color: var(--text-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 68%;
+  }
+  .card-mc { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-faint); white-space: nowrap; }
   .empty {
     text-align: center; padding: 60px 20px; color: var(--text-faint);
   }
@@ -324,14 +348,38 @@
 
   .loading-state { text-align: center; padding: 80px 20px; color: var(--text-faint); font-family: var(--font-mono); font-size: 13px; }
 
+  /* ---- Lock screen ---- */
+  .lock-screen {
+    display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .lock-screen.show { display: flex; }
+  .lock-box { max-width: 300px; width: 100%; text-align: center; }
+  .lock-title { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin-bottom: 6px; }
+  .lock-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+  .lock-box input {
+    width: 100%; background: var(--bg-card); border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 10px 12px; font-size: 14px; text-align: center; outline: none;
+  }
+  .lock-box input:focus { border-color: var(--accent-dim); }
+  .lock-error { color: var(--red); font-size: 12.5px; margin-top: 10px; display: none; }
+
   @media (max-width: 520px) {
     .field-row { grid-template-columns: 1fr; }
-    .row-date { order: 5; }
-    .scores { width: 100%; justify-content: space-between; }
+    .games-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; }
   }
 </style>
 </head>
 <body>
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-title">🔒 Jogos Zerados</div>
+    <div class="lock-sub">Área pessoal — digite a senha pra entrar.</div>
+    <input type="password" id="lockPassword" placeholder="Senha" autocomplete="current-password">
+    <button class="btn btn-accent" id="lockSubmit" style="width:100%;margin-top:10px;">Entrar</button>
+    <div class="lock-error" id="lockError">Senha incorreta.</div>
+  </div>
+</div>
 <div class="wrap">
 
   <header class="top">
@@ -349,6 +397,8 @@
       <input type="file" id="restoreInput" accept=".json" style="display:none;">
       <button class="util-btn install" id="btnInstall">⭳ Instalar no PC</button>
       <button class="util-btn" id="btnSettings">⚙ Configurações</button>
+      <button class="util-btn" id="btnBulkCovers">🪄 Buscar capas em massa</button>
+      <span class="util-status" id="bulkCoverStatus"></span>
     </div>
   </header>
 
@@ -387,7 +437,7 @@
     </div>
     <div class="count-note" id="countNote"></div>
 
-    <div class="list" id="list"></div>
+    <div class="games-grid" id="list"></div>
     <div class="empty" id="emptyState" style="display:none;">
       <div class="big">Nenhum jogo encontrado</div>
       <div>Tente outro filtro ou termo de busca.</div>
@@ -519,9 +569,9 @@
           <label for="bPriority">Prioridade</label>
           <select id="bPriority">
             <option value="">—</option>
-            <option value="alta">Quero muito</option>
-            <option value="media">Quero</option>
-            <option value="baixa">Sem pressa</option>
+            <option value="agora">Jogar agora</option>
+            <option value="depois">Jogar após</option>
+            <option value="sem-pressa">Sem pressa</option>
           </select>
         </div>
       </div>
@@ -566,21 +616,63 @@
 (function() {
   "use strict";
 
-  var SEED_GAMES = [{"id": "g0001", "title": "Luigi's Mansion", "platform": "Nintendo Game Cube", "finishedDateIso": "2018-07-11", "finishedDateRaw": null, "metascore": 74, "userscore": 8.2, "myGradeRaw": "B", "myGradeLetter": "B", "comments": null, "isDlc": false}, {"id": "g0002", "title": "Max the Curse of Brotherhood", "platform": "Xbox One", "finishedDateIso": "2019-04-01", "finishedDateRaw": null, "metascore": 72, "userscore": 7.4, "myGradeRaw": "B -", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0003", "title": "Batman Return of Arkham Asylium", "platform": "Xbox One", "finishedDateIso": "2019-04-16", "finishedDateRaw": null, "metascore": 73, "userscore": 8.3, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0004", "title": "Rise of the Tomb Raider", "platform": "Xbox One", "finishedDateIso": "2019-05-01", "finishedDateRaw": null, "metascore": 86, "userscore": 8.1, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0005", "title": "The Walking Dead Telltale Episódio 1", "platform": "PC", "finishedDateIso": "2019-06-28", "finishedDateRaw": null, "metascore": 82, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0006", "title": "The Walking Dead Telltale Episódio 2", "platform": "PC", "finishedDateIso": "2019-06-28", "finishedDateRaw": null, "metascore": 82, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0007", "title": "The Walking Dead Telltale Episódio 3", "platform": "PC", "finishedDateIso": "2019-07-02", "finishedDateRaw": null, "metascore": 82, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0008", "title": "Cadillac and Dinousaurs", "platform": "Arcade", "finishedDateIso": "2019-09-19", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": "Michele", "isDlc": false}, {"id": "g0009", "title": "Miracle Adventure Spin Masters", "platform": "Arcade", "finishedDateIso": "2019-09-21", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Michele e Lívia", "isDlc": false}, {"id": "g0010", "title": "Chroma Squad", "platform": "PC", "finishedDateIso": "2019-09-22", "finishedDateRaw": null, "metascore": 75, "userscore": 7.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Comprado", "isDlc": false}, {"id": "g0011", "title": "Sonic Generartions", "platform": "PC", "finishedDateIso": "2019-09-24", "finishedDateRaw": null, "metascore": 77, "userscore": 8.4, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Live Gold", "isDlc": false}, {"id": "g0012", "title": "Guacamelee Super Turbo Championship Edition", "platform": "Xbox One", "finishedDateIso": "2020-01-02", "finishedDateRaw": null, "metascore": 87, "userscore": 7.7, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": "Game Pass", "isDlc": false}, {"id": "g0013", "title": "The Last of Us Remastered", "platform": "Playstation 4", "finishedDateIso": "2020-01-07", "finishedDateRaw": null, "metascore": 95, "userscore": 9.2, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "PSN Plus", "isDlc": false}, {"id": "g0014", "title": "Gears of War 2", "platform": "Xbox 360", "finishedDateIso": "2020-01-29", "finishedDateRaw": null, "metascore": 93, "userscore": 8.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Game Pass", "isDlc": false}, {"id": "g0015", "title": "Shadow of the Tomb Raider", "platform": "Xbox One", "finishedDateIso": "2020-02-12", "finishedDateRaw": null, "metascore": null, "userscore": 7.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Game Pass", "isDlc": false}, {"id": "g0016", "title": "Super Mario 3D Land", "platform": "Nintendo 3DS", "finishedDateIso": "2020-02-26", "finishedDateRaw": null, "metascore": 90, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0017", "title": "Ori and the Blind Forest Definitive Edition", "platform": "Xbox One", "finishedDateIso": "2020-03-04", "finishedDateRaw": null, "metascore": 88, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Game Pass", "isDlc": false}, {"id": "g0018", "title": "Street of Rage", "platform": "Xbox 360", "finishedDateIso": "2020-05-03", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Michele - Game Pass", "isDlc": false}, {"id": "g0019", "title": "Street of Rage 2", "platform": "Xbox 360", "finishedDateIso": "2020-05-04", "finishedDateRaw": null, "metascore": 89, "userscore": 8.0, "myGradeRaw": "B+ (8.6 a 8.9)", "myGradeLetter": "B+", "comments": "Michele - Game Pass", "isDlc": false}, {"id": "g0020", "title": "Knights of Pen and Paper +1 Deluxier Edition", "platform": "Xbox One", "finishedDateIso": "2020-05-21", "finishedDateRaw": null, "metascore": 80, "userscore": 6.9, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Xbox Gold Fiz os dois finais", "isDlc": false}, {"id": "g0021", "title": "Injustice 2", "platform": "Xbox One", "finishedDateIso": "2020-05-23", "finishedDateRaw": null, "metascore": 87, "userscore": 7.9, "myGradeRaw": "C-", "myGradeLetter": "C-", "comments": "jogo do Gabriel", "isDlc": false}, {"id": "g0022", "title": "Overcooked", "platform": "Xbox One", "finishedDateIso": "2020-06-15", "finishedDateRaw": null, "metascore": 78, "userscore": 7.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Com Michele", "isDlc": false}, {"id": "g0023", "title": "Dlc 1 Overcooked", "platform": "Xbox One", "finishedDateIso": "2020-06-15", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": null, "myGradeLetter": null, "comments": "Com Michele", "isDlc": true}, {"id": "g0024", "title": "The Last of Us - Left Behind", "platform": "Playstation 4", "finishedDateIso": "2020-06-19", "finishedDateRaw": null, "metascore": 88, "userscore": 8.1, "myGradeRaw": "C", "myGradeLetter": "C", "comments": "Dlc", "isDlc": false}, {"id": "g0025", "title": "God of War 4", "platform": "Playstation 4", "finishedDateIso": null, "finishedDateRaw": null, "metascore": 94, "userscore": 9.0, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0026", "title": "Brothers a Tale of Two Sons", "platform": "Nintendo Switch", "finishedDateIso": null, "finishedDateRaw": null, "metascore": 86, "userscore": 8.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "com a Michele", "isDlc": false}, {"id": "g0027", "title": "The legend of Zelda A Link's Awekinings", "platform": "Nintendo Switch", "finishedDateIso": null, "finishedDateRaw": null, "metascore": 87, "userscore": 8.3, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0028", "title": "Star Wars Jedi Fallen Order", "platform": "Xbox One", "finishedDateIso": "2020-11-22", "finishedDateRaw": null, "metascore": 79, "userscore": 7.6, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "primeiro zerado no xbox series s", "isDlc": false}, {"id": "g0029", "title": "Stranger Things 3 The Game", "platform": "Xbox One", "finishedDateIso": "2020-11-25", "finishedDateRaw": null, "metascore": 72, "userscore": 5.4, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0030", "title": "Gears of War 3", "platform": "Xbox 360", "finishedDateIso": "2020-11-27", "finishedDateRaw": null, "metascore": 91, "userscore": 8.2, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0031", "title": "Gears of War Judgment", "platform": "Xbox 360", "finishedDateIso": "2020-11-29", "finishedDateRaw": null, "metascore": 79, "userscore": 5.9, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0032", "title": "Gears of War Judgment Aftermatch", "platform": "Xbox 360", "finishedDateIso": "2020-11-29", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0033", "title": "Assassin's Creed 2", "platform": "Playstation 4", "finishedDateIso": "2021-03-27", "finishedDateRaw": null, "metascore": 90, "userscore": 8.8, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0034", "title": "Spider Man", "platform": "Playstation 4", "finishedDateIso": "2021-09-12", "finishedDateRaw": null, "metascore": 87, "userscore": 8.7, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerado no ps5", "isDlc": false}, {"id": "g0035", "title": "Luigi's Mansion 3", "platform": "Nintendo Switch", "finishedDateIso": "2021-09-24", "finishedDateRaw": null, "metascore": 86, "userscore": 8.4, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": "Cluber Gamer", "isDlc": false}, {"id": "g0036", "title": "Horizon Zero Dawn", "platform": "Playstation 4", "finishedDateIso": "2021-11-12", "finishedDateRaw": null, "metascore": 89, "userscore": 8.3, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Zerado no ps5", "isDlc": false}, {"id": "g0037", "title": "Horizon Zero Dawn The Frozen Wilds", "platform": "Playstation 4/DLC", "finishedDateIso": "2021-11-16", "finishedDateRaw": null, "metascore": 89, "userscore": 7.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerado no ps5", "isDlc": true}, {"id": "g0038", "title": "Gears of War 4", "platform": "PC", "finishedDateIso": "2022-01-10", "finishedDateRaw": null, "metascore": 84, "userscore": 7.1, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Zerado Game pass", "isDlc": false}, {"id": "g0039", "title": "Mafia II Definitive Edition", "platform": "PC", "finishedDateIso": "2022-03-19", "finishedDateRaw": null, "metascore": 78, "userscore": 7.6, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Epic Games (Comprado)", "isDlc": false}, {"id": "g0040", "title": "Life is Strange", "platform": "Xbox", "finishedDateIso": "2022-05-21", "finishedDateRaw": null, "metascore": 85, "userscore": 8.6, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Gold series s platinado", "isDlc": false}, {"id": "g0041", "title": "Life is Strange Before the Storm Remastered", "platform": "Xbox Series S", "finishedDateIso": "2022-05-31", "finishedDateRaw": null, "metascore": 77, "userscore": 7.9, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "One Flix Platinado", "isDlc": false}, {"id": "g0042", "title": "Life is Strange Before the Storm Remastered Farewell", "platform": "Xbox Series S", "finishedDateIso": "2022-05-31", "finishedDateRaw": null, "metascore": 80, "userscore": 7.8, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": "One Flix nao tem conquistas", "isDlc": false}, {"id": "g0043", "title": "It Takes Two", "platform": "Xbox Series S", "finishedDateIso": "2022-06-02", "finishedDateRaw": null, "metascore": 88, "userscore": 8.8, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Game Pass (Ea Access) zerado com a Michele", "isDlc": false}, {"id": "g0044", "title": "Assassin's Creed Brotherhood", "platform": "Xbox Series S", "finishedDateIso": "2022-06-17", "finishedDateRaw": null, "metascore": 89, "userscore": 8.3, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "meu jogo", "isDlc": false}, {"id": "g0045", "title": "Days Gone", "platform": "Playstation 5", "finishedDateIso": "2022-07-02", "finishedDateRaw": null, "metascore": 78, "userscore": 8.8, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "plus compra console", "isDlc": false}, {"id": "g0046", "title": "Teenage Mutant Ninja Turtles: Shredder's Revenge", "platform": "Xbox Series S", "finishedDateIso": "2022-07-04", "finishedDateRaw": null, "metascore": 87, "userscore": 7.4, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "gamepass", "isDlc": false}, {"id": "g0047", "title": "Senhor dos anéis Sombras de Mordor Edição Jogo do Ano", "platform": "Xbox Series S", "finishedDateIso": "2022-08-07", "finishedDateRaw": null, "metascore": 84, "userscore": 7.9, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "oneflix", "isDlc": false}, {"id": "g0048", "title": "A Plague Tale Innocence", "platform": "Xbox Series S", "finishedDateIso": "2022-09-03", "finishedDateRaw": null, "metascore": 81, "userscore": 8.2, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Game Pass", "isDlc": false}, {"id": "g0049", "title": "Space Jam A New Legacy The Game", "platform": "Xbox Series S", "finishedDateIso": "2022-11-15", "finishedDateRaw": null, "metascore": 53, "userscore": 5.3, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "grátis", "isDlc": false}, {"id": "g0050", "title": "Hi-Fi Rush", "platform": "Xbox Series S", "finishedDateIso": "2023-02-09", "finishedDateRaw": null, "metascore": 87, "userscore": 8.8, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Game Pass", "isDlc": false}, {"id": "g0051", "title": "Overcooked 2", "platform": "Xbox Series S", "finishedDateIso": "2023-02-13", "finishedDateRaw": null, "metascore": 81, "userscore": 7.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "com a Michele", "isDlc": false}, {"id": "g0052", "title": "Tunic", "platform": "Xbox Series S", "finishedDateIso": "2023-03-18", "finishedDateRaw": null, "metascore": 85, "userscore": 7.9, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Game Pass platinado", "isDlc": false}, {"id": "g0053", "title": "A Memoir Blue", "platform": "Xbox Series S", "finishedDateIso": "2023-03-18", "finishedDateRaw": null, "metascore": 71, "userscore": 6.0, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Game pass platinado", "isDlc": false}, {"id": "g0054", "title": "Mario Kart 8 Deluxe", "platform": "Nintendo Switch", "finishedDateIso": "2023-04-15", "finishedDateRaw": null, "metascore": 92, "userscore": 8.6, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Emulador de Switch no PC. Modo 50 cc zerado, mas nem todas as estrelas. Participação de Livia, Michele e Mateus", "isDlc": false}, {"id": "g0055", "title": "QuackShot Starring Donald Duck", "platform": "Mega Drive", "finishedDateIso": "2023-05-16", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0056", "title": "Spider Man Miles Morales", "platform": "PC", "finishedDateIso": "2023-05-24", "finishedDateRaw": null, "metascore": 85, "userscore": 7.6, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": "Torrent", "isDlc": false}, {"id": "g0057", "title": "Ghotswire Tokyo", "platform": "Xbox Series S", "finishedDateIso": "2023-10-12", "finishedDateRaw": null, "metascore": 75, "userscore": 7.2, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerei o Jogo + 1 Quest da DLC (menos o modo fio de aranha) / GamePass", "isDlc": false}, {"id": "g0058", "title": "Pokémon Fire Red", "platform": "Game Boy Advance", "finishedDateIso": "2023-10-28", "finishedDateRaw": null, "metascore": 81, "userscore": 8.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerei o jogo enfretando a Elite four duas vezes (primeira vez que zero passando pela segunda vez da e4 que é mais dificil) Time Usado Blastoise, MR. Mime, NidoKing, Arcanine, Frearow e Vileplume nas duas ligas", "isDlc": false}, {"id": "g0059", "title": "Casper", "platform": "Super Nintendo", "finishedDateIso": "2023-12-01", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Emulador no PC", "isDlc": false}, {"id": "g0060", "title": "Dark Pictures House of Ashes", "platform": "Playstation 5", "finishedDateIso": "2024-01-26", "finishedDateRaw": null, "metascore": 72, "userscore": 7.3, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Psn plus", "isDlc": false}, {"id": "g0061", "title": "South Park the Stick of Thuth", "platform": "Playstation 5", "finishedDateIso": "2024-01-31", "finishedDateRaw": null, "metascore": 85, "userscore": 8.5, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "PSN PLUS PLATINADO", "isDlc": false}, {"id": "g0062", "title": "Silent Hill The Short Message", "platform": "Playstation 5", "finishedDateIso": "2024-02-02", "finishedDateRaw": null, "metascore": 52, "userscore": 6.1, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Jogo grátis", "isDlc": false}, {"id": "g0063", "title": "Uncharted Drake's Fortune", "platform": "Playstation 5", "finishedDateIso": "2024-02-03", "finishedDateRaw": null, "metascore": 88, "userscore": 7.7, "myGradeRaw": "B", "myGradeLetter": "B", "comments": "Psn plus", "isDlc": false}, {"id": "g0064", "title": "Uncharted 2 Among Thieves", "platform": "Playstation 5", "finishedDateIso": "2024-02-06", "finishedDateRaw": null, "metascore": 96, "userscore": 8.9, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": null, "isDlc": false}, {"id": "g0065", "title": "Uncharted 3 Drake's Deception", "platform": "Playstation 5", "finishedDateIso": "2024-02-10", "finishedDateRaw": null, "metascore": 92, "userscore": 8.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0066", "title": "Nobody's Saves The World", "platform": "Playstation 5", "finishedDateIso": "2024-02-13", "finishedDateRaw": null, "metascore": 79, "userscore": 7.4, "myGradeRaw": "B-", "myGradeLetter": "B-", "comments": "Com a Michele", "isDlc": false}, {"id": "g0067", "title": "Uncharted 4 A Thief's End", "platform": "Playstation 5", "finishedDateIso": "2024-02-14", "finishedDateRaw": null, "metascore": 93, "userscore": 8.7, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": null, "isDlc": false}, {"id": "g0068", "title": "Uncharted The Lost Legacy", "platform": "Playstation 5", "finishedDateIso": "2024-02-15", "finishedDateRaw": null, "metascore": 84, "userscore": 8.0, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0069", "title": "Spider Man 2", "platform": "Playstation 5", "finishedDateIso": "2024-03-02", "finishedDateRaw": null, "metascore": 90, "userscore": 8.6, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "100% das missoes, side Quest e colecionáveis", "isDlc": false}, {"id": "g0070", "title": "NIOH Remastered", "platform": "Playstation 5", "finishedDateIso": null, "finishedDateRaw": "Em algum momento entre março e abril", "metascore": 88, "userscore": 8.1, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0071", "title": "The Gunk", "platform": "PC", "finishedDateIso": "2024-05-25", "finishedDateRaw": null, "metascore": 70, "userscore": 6.7, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Game Pass PC", "isDlc": false}, {"id": "g0072", "title": "Echo Generation Midnight Edition", "platform": "Nintendo Switch", "finishedDateIso": "2024-07-07", "finishedDateRaw": null, "metascore": 70, "userscore": null, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Piratão", "isDlc": false}, {"id": "g0073", "title": "Super Mario 3D World", "platform": "Nintendo Switch", "finishedDateIso": "2024-11-17", "finishedDateRaw": null, "metascore": 89, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Zerado com a Michele 100% (Todas as Estrelas e Carimbos) No dia 17/11 também Fizemos 100% da Star Road", "isDlc": false}, {"id": "g0074", "title": "Luigi´s Mansion 3", "platform": "Nintendo Switch", "finishedDateIso": "2024-11-23", "finishedDateRaw": null, "metascore": 86, "userscore": 8.4, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0075", "title": "CyberPunk 2077", "platform": "PC", "finishedDateIso": "2024-12-21", "finishedDateRaw": null, "metascore": 85, "userscore": 8.7, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Steam Família. Fiz o Final que o V fica com a Panam, volta pro corpo, tem 6 meses de vida e sai de Night City com a Panam", "isDlc": false}, {"id": "g0076", "title": "CyberPunk 2077 Phantom Liberty", "platform": "PC/DLC", "finishedDateIso": "2024-12-23", "finishedDateRaw": null, "metascore": 89, "userscore": 8.9, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Stam Família. Fiz o Final que enviei a Song pra Lua e matei o Reed", "isDlc": true}, {"id": "g0077", "title": "Indika", "platform": "PC", "finishedDateIso": "2024-12-25", "finishedDateRaw": null, "metascore": 80, "userscore": 7.0, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Piratão", "isDlc": false}, {"id": "g0078", "title": "Gears 5", "platform": "PC", "finishedDateIso": "2024-12-31", "finishedDateRaw": null, "metascore": 84, "userscore": 8.2, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Fiz o final salvando o Del", "isDlc": false}, {"id": "g0079", "title": "Gears 5 – Hivebusters", "platform": "PC/DLC", "finishedDateIso": "2025-01-02", "finishedDateRaw": null, "metascore": 82, "userscore": 7.6, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": null, "isDlc": true}, {"id": "g0080", "title": "Crash Bandicoot", "platform": "PC", "finishedDateIso": "2025-03-04", "finishedDateRaw": null, "metascore": 80, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "PC Game Pass Zerei com a Michele", "isDlc": false}, {"id": "g0081", "title": "Mega Man 1", "platform": "PC/NES", "finishedDateIso": "2025-03-10", "finishedDateRaw": null, "metascore": 80, "userscore": 7.2, "myGradeRaw": "D - (0.0 a 5.0)", "myGradeLetter": "D-", "comments": "Primeiro Mega Man zerado na coletânea Mega Man Legacy da Steam", "isDlc": false}, {"id": "g0082", "title": "Mega Man 2", "platform": "PC/NES", "finishedDateIso": "2025-03-10", "finishedDateRaw": null, "metascore": 80, "userscore": 7.2, "myGradeRaw": "D - (0.0 a 5.0)", "myGradeLetter": "D-", "comments": "Segundo Mega Man zerado na coletânea Mega Man Legacy da Steam", "isDlc": false}, {"id": "g0083", "title": "Split Fiction", "platform": "PC", "finishedDateIso": "2025-03-13", "finishedDateRaw": null, "metascore": 91, "userscore": 8.6, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": "Zerado com a Michele pelo Hydra. Fizemos todas as histórias secundárias", "isDlc": false}, {"id": "g0084", "title": "Pokémon Fire Red", "platform": "Game Boy Advance", "finishedDateIso": "2025-04-04", "finishedDateRaw": null, "metascore": 81, "userscore": 8.4, "myGradeRaw": "A", "myGradeLetter": "A", "comments": "Celular com o Time Venosaur, Moltres, Nidoking, Vaporeaon, Aerodactyl e Parasect de HM Slave", "isDlc": false}, {"id": "g0085", "title": "Clair Obscure Expedition 33", "platform": "PC", "finishedDateIso": "2025-06-20", "finishedDateRaw": null, "metascore": 92, "userscore": 8.5, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Hydra - FIz o final da Maelle. Melhor jogo da minha vida", "isDlc": false}, {"id": "g0086", "title": "Elden Ring", "platform": "PC", "finishedDateIso": "2025-08-08", "finishedDateRaw": null, "metascore": 96, "userscore": 8.4, "myGradeRaw": "A -", "myGradeLetter": "A-", "comments": "Platinado, usei o save em nuvem", "isDlc": false}, {"id": "g0087", "title": "CupHead", "platform": "PC", "finishedDateIso": "2025-08-09", "finishedDateRaw": null, "metascore": 86, "userscore": 8.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Finalizei com a Livia, usamos cheat de tiro e vida", "isDlc": false}, {"id": "g0088", "title": "Cuphead – The Delicious Last Course", "platform": "PC/DLC", "finishedDateIso": "2025-08-09", "finishedDateRaw": null, "metascore": 86, "userscore": 8.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Finalizei com a Livia, usamos cheat de tiro e vida", "isDlc": true}, {"id": "g0089", "title": "Mortal Kombat 11", "platform": "PC", "finishedDateIso": "2025-08-13", "finishedDateRaw": null, "metascore": 82, "userscore": 4.4, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Modo História, fiz o final canônico, onde ganho a luta mas perco 1 round para Kronica. Esse final que leva a história da DLC, fiz sem querer, n sabia kkk", "isDlc": false}, {"id": "g0090", "title": "Mortal Kombat 11 Aftermath", "platform": "PC/DLC", "finishedDateIso": "2025-08-15", "finishedDateRaw": null, "metascore": 82, "userscore": 4.4, "myGradeRaw": "D", "myGradeLetter": "D", "comments": "Modo História, fiz o final bom, do Liu Kang", "isDlc": true}, {"id": "g0091", "title": "Lovers in a Dangerous Spacetime", "platform": "PC", "finishedDateIso": "2025-08-23", "finishedDateRaw": null, "metascore": 82, "userscore": 7.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0092", "title": "Atlas Fallen Reign of Sand", "platform": "PC", "finishedDateIso": "2025-09-06", "finishedDateRaw": null, "metascore": 64, "userscore": 6.2, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Hydra", "isDlc": false}, {"id": "g0093", "title": "Resident Evil 5 Gold Edition", "platform": "PC", "finishedDateIso": "2025-09-19", "finishedDateRaw": null, "metascore": 83, "userscore": 7.2, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0094", "title": "Brothers a Tale of Two Sons Remake", "platform": "PC", "finishedDateIso": "2025-09-20", "finishedDateRaw": null, "metascore": 86, "userscore": 8.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Zerado com a Michele", "isDlc": false}, {"id": "g0095", "title": "Streets of Rage", "platform": "PC/Emulador", "finishedDateIso": "2025-09-26", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0096", "title": "Street of Rage 2", "platform": "PC/Emulador", "finishedDateIso": "2025-09-28", "finishedDateRaw": null, "metascore": 89, "userscore": 8.0, "myGradeRaw": "B+ (8.6 a 8.9)", "myGradeLetter": "B+", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0097", "title": "Black Mesa", "platform": "PC", "finishedDateIso": "2025-10-04", "finishedDateRaw": null, "metascore": 84, "userscore": 8.7, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Remake de Half Life 1 feito por fãs", "isDlc": false}, {"id": "g0098", "title": "Stellar Blade", "platform": "PC", "finishedDateIso": "2025-11-01", "finishedDateRaw": null, "metascore": 81, "userscore": 9.1, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0099", "title": "Pokémon Emerald", "platform": "Game Boy Advance", "finishedDateIso": "2025-11-20", "finishedDateRaw": null, "metascore": 76, "userscore": 8.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Time Aggron, Machamp, Swellon, Magneton, Camerupt e Swampert", "isDlc": false}, {"id": "g0100", "title": "Super Mario RPG", "platform": "Nintendo Switch", "finishedDateIso": "2025-11-22", "finishedDateRaw": null, "metascore": 84, "userscore": 8.0, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0101", "title": "The Legend of Zelda Ocarina Of Time (Ship of Harkinian)", "platform": "Nintendo 64", "finishedDateIso": "2025-11-30", "finishedDateRaw": null, "metascore": 99, "userscore": 9.1, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Port de PC como Mod Gráfico", "isDlc": false}, {"id": "g0102", "title": "Pokémon SoulSilver", "platform": "Nintendo DS", "finishedDateIso": "2025-12-06", "finishedDateRaw": null, "metascore": 87, "userscore": 9.1, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Zerei a parte de Johto com o time Typhlosion, Dragonite, Ampharos, Lugia, Poliwrath e Victreebel", "isDlc": false}, {"id": "g0103", "title": "Nioh 2", "platform": "PC", "finishedDateIso": "2025-12-24", "finishedDateRaw": null, "metascore": 86, "userscore": 7.6, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "59 horas", "isDlc": false}, {"id": "g0104", "title": "South of Midnight", "platform": "PC", "finishedDateIso": "2025-12-26", "finishedDateRaw": null, "metascore": 77, "userscore": 6.8, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0105", "title": "Castle Crashers", "platform": "PC", "finishedDateIso": "2025-12-30", "finishedDateRaw": null, "metascore": 83, "userscore": 8.4, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Livia", "isDlc": false}, {"id": "g0106", "title": "Kingdom Come Deliverance: O Destino de uma Mulher", "platform": "PC/DLC", "finishedDateIso": "2026-01-04", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": null, "myGradeLetter": null, "comments": "Zerei a dlc primeiro, pq sem querer entrei nela e não dava pra sair. Desisti do jogo base", "isDlc": true}, {"id": "g0107", "title": "Katana Zero", "platform": "PC", "finishedDateIso": "2026-02-01", "finishedDateRaw": null, "metascore": 83, "userscore": 8.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0108", "title": "Mega Man 3", "platform": "PC/NES", "finishedDateIso": "2026-02-07", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D - (0 a 5)", "myGradeLetter": "D-", "comments": null, "isDlc": false}, {"id": "g0109", "title": "Resident Evil 0 Remake", "platform": "PC", "finishedDateIso": "2026-02-18", "finishedDateRaw": null, "metascore": 70, "userscore": 7.4, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": null, "isDlc": false}, {"id": "g0110", "title": "Resident Evil 1 HD Remaster", "platform": "PC", "finishedDateIso": "2026-02-22", "finishedDateRaw": null, "metascore": 83, "userscore": 8.5, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": "Final perfeito da Jill", "isDlc": false}, {"id": "g0111", "title": "Resident Evil 1 HD Remaster", "platform": "PC", "finishedDateIso": "2026-03-01", "finishedDateRaw": null, "metascore": 83, "userscore": 8.5, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": "Final perfeito do Chris", "isDlc": false}, {"id": "g0112", "title": "Crash Bandicoot 2", "platform": "PC", "finishedDateIso": "2026-03-03", "finishedDateRaw": null, "metascore": 80, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerei com a Michele", "isDlc": false}, {"id": "g0113", "title": "Crash Bandicoot 3", "platform": "PC", "finishedDateIso": "2026-03-04", "finishedDateRaw": null, "metascore": 80, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerei com a Michele", "isDlc": false}, {"id": "g0114", "title": "Resident Evil 3", "platform": "PC", "finishedDateIso": "2026-03-09", "finishedDateRaw": null, "metascore": 79, "userscore": 6.8, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": null, "isDlc": false}, {"id": "g0115", "title": "Super Mario Bros.", "platform": "Super Nintendo", "finishedDateIso": "2026-03-11", "finishedDateRaw": null, "metascore": 84, "userscore": 8.0, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerado com a Michele a versão do Super Mario All-Stars", "isDlc": false}, {"id": "g0116", "title": "Bang Average Football", "platform": "PC", "finishedDateIso": "2026-04-18", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": null, "isDlc": false}, {"id": "g0117", "title": "Star Fox 64 3DS", "platform": "Nintendo 3DS", "finishedDateIso": "2026-05-08", "finishedDateRaw": null, "metascore": 81, "userscore": 8.0, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0118", "title": "Pragmata", "platform": "PC", "finishedDateIso": "2026-05-11", "finishedDateRaw": null, "metascore": 85, "userscore": 8.8, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0119", "title": "Parasite Eve", "platform": "Playstation", "finishedDateIso": "2026-05-17", "finishedDateRaw": null, "metascore": 81, "userscore": 8.7, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": "Não fiz o segundo final pq é repetitivo. Assisti no Youtube", "isDlc": false}, {"id": "g0120", "title": "Marvel Cosmic Invasion", "platform": "PC", "finishedDateIso": "2026-05-24", "finishedDateRaw": null, "metascore": 81, "userscore": 7.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Game Pass. Zerei com a Livia (jogou 90% no coop online cm outros players)", "isDlc": false}, {"id": "g0121", "title": "Final Fantasy 1 Pixel Remaster", "platform": "PC", "finishedDateIso": "2026-06-04", "finishedDateRaw": null, "metascore": 80, "userscore": 6.8, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Platinado no mesmo dia. Game Pass", "isDlc": false}, {"id": "g0122", "title": "Final Fantasy 2 Pixel Remaster", "platform": "PC", "finishedDateIso": "2026-06-18", "finishedDateRaw": null, "metascore": 77, "userscore": 5.8, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Platinado no mesmo dia. Game Pass", "isDlc": false}, {"id": "g0123", "title": "Chasm", "platform": "PC", "finishedDateIso": "2026-08-07", "finishedDateRaw": null, "metascore": 72, "userscore": 6.7, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0124", "title": "Toziuha Night Dracula's Revenge", "platform": "PC", "finishedDateIso": "2026-08-08", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Jogabilidade ruim, porém até que a história apesar de básica e previsível, é legalzinha, um jogo curto de um desenvolvedor iniciante. Serviu para me apresentar o universo e me aventurar na continuação que é metroidvania", "isDlc": false}, {"id": "g0125", "title": "Donkey Kong Country", "platform": "Super Nintendo", "finishedDateIso": "2026-08-10", "finishedDateRaw": null, "metascore": 78, "userscore": 8.7, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Até para época era básico, repetitivo. Acho que só fez sucesso pelo efeito 3D", "isDlc": false}, {"id": "g0126", "title": "Dark Souls - Artorias of the Abyss Remastered", "platform": "PC", "finishedDateIso": "2026-08-22", "finishedDateRaw": null, "metascore": 89, "userscore": 8.8, "myGradeRaw": "B-", "myGradeLetter": "B-", "comments": "Ja tinha matado ontem o boss final da dlc sem saber, então considero zerado hj, as minhas considerações são as mesmas do jogo base, com o agravante da dlc ser mais vazia e sem sentido algum tanto de história, tando da mecânica que precisa fazer parar jogar ela.", "isDlc": false}, {"id": "g0127", "title": "Darks Souls Remastered", "platform": "PC", "finishedDateIso": "2026-08-22", "finishedDateRaw": null, "metascore": 84, "userscore": 8.4, "myGradeRaw": "B", "myGradeLetter": "B", "comments": "Não gosto do jeito da From contar a lore, fora isso é um jogo OK. Tem partes vazias, muitas areas opcionais que se você nao jogar com um guia, n fica sabendo da existência ou fica preso ali sem saber  que o caminho não é por ali agora ou que nem precisa estar. Muitas mecânicas para bosses e acesso a locais você so fica sabendo se consultar guias. Alguns bosses foram claramente criados para testar mecânicas para os futuros jogos da produtora. Acho que não jogarei os outros e nem mais jogos da produtora que não conte a história de forma padrão. Fiz o final que eu livro a humanidade me tornando o lorde da escuridão", "isDlc": false}, {"id": "g0128", "title": "007 First Light", "platform": "PC", "finishedDateIso": "2026-09-02", "finishedDateRaw": null, "metascore": 87, "userscore": 8.3, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0129", "title": "Hollow Knight", "platform": "PC", "finishedDateIso": "2026-09-13", "finishedDateRaw": null, "metascore": 89, "userscore": 9.0, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Nota polêmica, mas acho que os desafios finais e os chefes finais tem uma curva de dificuldade maior que todo o jogo, do nada o jogo vira um super meat boy. O final é curto, a maioria das habilidades não são usadas pq as batalhas são frenéticas, acho que geral um hype e o pessoal da nota alta pq viralizou", "isDlc": false}, {"id": "g0130", "title": "High On Life", "platform": "PC", "finishedDateIso": "2026-09-19", "finishedDateRaw": null, "metascore": 67, "userscore": 7.6, "myGradeRaw": "A -", "myGradeLetter": "A-", "comments": "Se você usar toda a jogabilidade a seu favor, utilizando todas as armas, se torna um jogo muito divertido. Fora os diálogos. Geralmente não gosto de comédia, mas esse é muito boa!", "isDlc": false}];
+  // ---------- auth gate ----------
+  // AUTH_HASH vazio = tela de senha desativada. Preenchido = exige a senha certa
+  // (comparamos o hash SHA-256, não a senha em texto puro) antes de mostrar o app.
+  var AUTH_HASH = '251a3226720b1c7550bd2b94ba49189a2ed442a4d113096c6d54d127f024b99b';
+  (function authGate() {
+    if (!AUTH_HASH) return;
+    if (localStorage.getItem('authOk') === '1') return;
+    var screen = document.getElementById('lockScreen');
+    var input = document.getElementById('lockPassword');
+    var errorEl = document.getElementById('lockError');
+    screen.classList.add('show');
+    function sha256Hex(str) {
+      var data = new TextEncoder().encode(str);
+      return crypto.subtle.digest('SHA-256', data).then(function(buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function(b) {
+          return b.toString(16).padStart(2, '0');
+        }).join('');
+      });
+    }
+    function trySubmit() {
+      errorEl.style.display = 'none';
+      sha256Hex(input.value).then(function(hash) {
+        if (hash === AUTH_HASH) {
+          localStorage.setItem('authOk', '1');
+          screen.classList.remove('show');
+        } else {
+          errorEl.textContent = 'Senha incorreta.';
+          errorEl.style.display = 'block';
+          input.value = '';
+          input.focus();
+        }
+      }).catch(function(err) {
+        console.error('auth hash failed', err);
+        errorEl.textContent = 'Não foi possível verificar (precisa de HTTPS).';
+        errorEl.style.display = 'block';
+      });
+    }
+    document.getElementById('lockSubmit').addEventListener('click', trySubmit);
+    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') trySubmit(); });
+    setTimeout(function() { input.focus(); }, 50);
+  })();
+
+  var SEED_GAMES = []; // dados pessoais não ficam no código público — restaure seu backup após o primeiro login
   var STORAGE_KEY = 'jogosZeradosData';
 
   // ---------- grade metadata ----------
   var GRADE_META = {
-    'S':  { order: 10, val: 9.8, color: '#f2b632', bg: 'rgba(242,182,50,.14)', range: '9.6–10' },
-    'A':  { order: 9,  val: 9.25,color: '#8fd14f', bg: 'rgba(143,209,79,.14)', range: '9.0–9.5' },
-    'A-': { order: 8,  val: 8.8, color: '#8fd14f', bg: 'rgba(143,209,79,.14)', range: '8.6–9.0' },
-    'B+': { order: 7.5,val: 8.75,color: '#5ec8c0', bg: 'rgba(94,200,192,.14)', range: '8.6–8.9' },
-    'B':  { order: 7,  val: 8.25,color: '#5ec8c0', bg: 'rgba(94,200,192,.14)', range: '8.0–8.5' },
-    'B-': { order: 6,  val: 7.75,color: '#5ec8c0', bg: 'rgba(94,200,192,.14)', range: '7.6–7.9' },
-    'C':  { order: 5,  val: 7.25,color: '#9296a8', bg: 'rgba(146,150,168,.12)', range: '7.0–7.5' },
-    'C-': { order: 4,  val: 6.5, color: '#9296a8', bg: 'rgba(146,150,168,.12)', range: '6.1–6.9' },
-    'D':  { order: 3,  val: 5.5, color: '#e0975a', bg: 'rgba(224,151,90,.14)', range: '5.1–6.0' },
-    'D-': { order: 2,  val: 2.5, color: '#e5695f', bg: 'rgba(229,105,95,.14)', range: '0–5.0' }
+    'S':  { order: 10, val: 9.8, color: '#ff6b4a', bg: 'rgba(255,107,74,.16)', range: '9.6–10' },
+    'A':  { order: 9,  val: 9.25,color: '#8fd14f', bg: 'rgba(143,209,79,.15)', range: '9.0–9.5' },
+    'A-': { order: 8,  val: 8.8, color: '#8fd14f', bg: 'rgba(143,209,79,.15)', range: '8.6–9.0' },
+    'B+': { order: 7.5,val: 8.75,color: '#27d9c6', bg: 'rgba(39,217,198,.15)', range: '8.6–8.9' },
+    'B':  { order: 7,  val: 8.25,color: '#27d9c6', bg: 'rgba(39,217,198,.15)', range: '8.0–8.5' },
+    'B-': { order: 6,  val: 7.75,color: '#27d9c6', bg: 'rgba(39,217,198,.15)', range: '7.6–7.9' },
+    'C':  { order: 5,  val: 7.25,color: '#9c94ab', bg: 'rgba(156,148,171,.13)', range: '7.0–7.5' },
+    'C-': { order: 4,  val: 6.5, color: '#9c94ab', bg: 'rgba(156,148,171,.13)', range: '6.1–6.9' },
+    'D':  { order: 3,  val: 5.5, color: '#ffb020', bg: 'rgba(255,176,32,.15)', range: '5.1–6.0' },
+    'D-': { order: 2,  val: 2.5, color: '#ff5470', bg: 'rgba(255,84,112,.15)', range: '0–5.0' }
   };
   var GRADE_ORDER_LIST = ['S', 'A', 'A-', 'B+', 'B', 'B-', 'C', 'C-', 'D', 'D-'];
 
@@ -650,7 +742,9 @@
     btnSearchRawgBacklog: document.getElementById('btnSearchRawgBacklog'),
     rawgResultsBacklog: document.getElementById('rawgResultsBacklog'),
     rawgStatusBacklog: document.getElementById('rawgStatusBacklog'),
-    bCoverUrl: document.getElementById('bCoverUrl')
+    bCoverUrl: document.getElementById('bCoverUrl'),
+    btnBulkCovers: document.getElementById('btnBulkCovers'),
+    bulkCoverStatus: document.getElementById('bulkCoverStatus')
   };
 
   var state = {
@@ -803,37 +897,32 @@
     els.emptyState.style.display = 'none';
     els.list.innerHTML = list.map(function(g) {
       var gm = g.myGradeLetter ? GRADE_META[g.myGradeLetter] : null;
-      var gradeHtml = gm
-        ? '<span class="grade-badge" style="color:' + gm.color + ';background:' + gm.bg + '">' + esc(g.myGradeLetter) + '</span>'
-        : '<span class="grade-badge" style="color:var(--text-faint);background:var(--bg-hover)">—</span>';
-      var meta = typeof g.metascore === 'number' ? g.metascore : '—';
-      var user = typeof g.userscore === 'number' ? g.userscore.toFixed(1) : '—';
-      var isOpen = state.openRow === g.id;
-      return '<div class="row' + (isOpen ? ' open' : '') + '" data-id="' + esc(g.id) + '">' +
-        '<div class="row-main">' +
-          (g.coverUrl ? '<img class="row-cover" src="' + esc(g.coverUrl) + '" alt="" loading="lazy">' : '') +
-          (g.platform ? '<span class="plat-tag">' + esc(g.platform) + '</span>' : '') +
-          '<div class="row-title">' + esc(g.title) + (g.isDlc ? '<span class="dlc">DLC</span>' : '') + '</div>' +
-          '<div class="row-date">' + esc(fmtDate(g)) + '</div>' +
-          '<div class="scores">' +
-            gradeHtml +
-            '<span class="score-chip">MC <b>' + meta + '</b></span>' +
-            '<span class="score-chip">Users <b>' + user + '</b></span>' +
-          '</div>' +
-          '<span class="chevron">›</span>' +
-        '</div>' +
-        '<div class="row-detail">' +
-          (g.comments ? '<p class="row-comment">' + esc(g.comments) + '</p>' : '<p class="row-comment" style="font-style:italic;">Sem observações.</p>') +
-          '<div class="row-actions">' +
-            '<button class="btn btn-ghost" data-action="edit" data-id="' + esc(g.id) + '">Editar</button>' +
-            '<button class="btn btn-danger" data-action="delete" data-id="' + esc(g.id) + '">Excluir</button>' +
+      var gradeChip = gm
+        ? '<span class="cover-grade" style="color:' + gm.color + ';background:' + gm.bg + '">' + esc(g.myGradeLetter) + '</span>'
+        : '';
+      var meta = typeof g.metascore === 'number' ? g.metascore : null;
+      var coverInner = g.coverUrl
+        ? '<img src="' + esc(g.coverUrl) + '" alt="" loading="lazy">'
+        : '<div class="cover-fallback">' + esc(g.title) + '</div>';
+      var tipParts = [];
+      if (g.platform) tipParts.push(g.platform);
+      tipParts.push(fmtDate(g));
+      if (g.comments) tipParts.push(g.comments);
+      return '<div class="game-card" data-id="' + esc(g.id) + '" title="' + esc(tipParts.join(' — ')) + '">' +
+        '<button class="card-delete" data-action="delete" data-id="' + esc(g.id) + '" aria-label="Excluir">×</button>' +
+        '<div class="cover-wrap">' + coverInner + gradeChip + '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-title">' + esc(g.title) + (g.isDlc ? '<span class="dlc">DLC</span>' : '') + '</div>' +
+          '<div class="card-meta-row">' +
+            '<span class="card-plat">' + esc(g.platform || fmtDate(g)) + '</span>' +
+            (meta !== null ? '<span class="card-mc">MC ' + meta + '</span>' : '') +
           '</div>' +
         '</div>' +
       '</div>';
     }).join('');
   }
 
-  var PRIORITY_LABEL = { alta: 'Quero muito', media: 'Quero', baixa: 'Sem pressa' };
+  var PRIORITY_LABEL = { agora: 'Jogar agora', depois: 'Jogar após', 'sem-pressa': 'Sem pressa' };
 
   function getFilteredBacklog() {
     var q = els.backlogSearch.value.trim().toLowerCase();
@@ -940,12 +1029,18 @@
 
   var BACKLOG_STORAGE_KEY = 'jogosZeradosBacklog';
 
+  var PRIORITY_MIGRATE = { alta: 'agora', media: 'depois', baixa: 'sem-pressa' };
   function loadBacklog() {
     try {
       var raw = localStorage.getItem(BACKLOG_STORAGE_KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          parsed.forEach(function(b) {
+            if (b.priority && PRIORITY_MIGRATE[b.priority]) b.priority = PRIORITY_MIGRATE[b.priority];
+          });
+          return parsed;
+        }
       }
     } catch (e) { console.error('localStorage read failed (backlog)', e); }
     return [];
@@ -991,25 +1086,21 @@
   els.sortBy.addEventListener('change', renderList);
 
   els.list.addEventListener('click', function(e) {
-    var actionBtn = e.target.closest('[data-action]');
-    if (actionBtn) {
+    var delBtn = e.target.closest('[data-action="delete"]');
+    if (delBtn) {
       e.stopPropagation();
-      var id = actionBtn.getAttribute('data-id');
+      var id = delBtn.getAttribute('data-id');
       var game = state.games.find(function(g) { return g.id === id; });
-      if (actionBtn.getAttribute('data-action') === 'edit') {
-        openModal(game);
-      } else if (actionBtn.getAttribute('data-action') === 'delete') {
-        if (confirm('Excluir "' + game.title + '" da lista?')) {
-          deleteGame(id);
-        }
+      if (game && confirm('Excluir "' + game.title + '" da lista?')) {
+        deleteGame(id);
       }
       return;
     }
-    var row = e.target.closest('.row');
-    if (row) {
-      var id2 = row.getAttribute('data-id');
-      state.openRow = state.openRow === id2 ? null : id2;
-      renderList();
+    var card = e.target.closest('.game-card');
+    if (card) {
+      var cid = card.getAttribute('data-id');
+      var g = state.games.find(function(x) { return x.id === cid; });
+      if (g) openModal(g);
     }
   });
 
@@ -1418,6 +1509,68 @@
       els.bTitle.value = it.name;
       els.bCoverUrl.value = it.background_image || '';
     });
+  });
+
+  // ---------- RAWG: bulk fill covers for existing games ----------
+  function rawgQuickLookup(key, title) {
+    var url = 'https://api.rawg.io/api/games?key=' + encodeURIComponent(key) +
+      '&search=' + encodeURIComponent(title) + '&page_size=1';
+    return fetch(url).then(function(res) {
+      if (!res.ok) throw new Error('status ' + res.status);
+      return res.json();
+    }).then(function(data) {
+      var items = (data && data.results) || [];
+      return items[0] || null;
+    });
+  }
+
+  var bulkRunning = false;
+  els.btnBulkCovers.addEventListener('click', function() {
+    if (bulkRunning) return;
+    var key = getRawgKey();
+    if (!key) {
+      alert('Configure sua chave da RAWG em "⚙ Configurações" primeiro.');
+      return;
+    }
+    var targets = state.games.filter(function(g) { return !g.coverUrl; });
+    if (!targets.length) {
+      els.bulkCoverStatus.textContent = 'Todos os jogos já têm capa.';
+      return;
+    }
+    var ok = confirm('Buscar capa (e metascore, quando estiver faltando) pra ' + targets.length + ' jogo(s) sem capa, usando a correspondência mais provável da RAWG? Isso pode levar alguns minutos.');
+    if (!ok) return;
+
+    bulkRunning = true;
+    els.btnBulkCovers.disabled = true;
+    var done = 0, filled = 0, failed = 0;
+
+    function step() {
+      if (done >= targets.length) {
+        bulkRunning = false;
+        els.btnBulkCovers.disabled = false;
+        els.bulkCoverStatus.textContent = 'Concluído: ' + filled + ' capa(s) preenchida(s)' + (failed ? ', ' + failed + ' não encontrada(s)' : '') + '.';
+        persistGames();
+        renderAll();
+        return;
+      }
+      var g = targets[done];
+      els.bulkCoverStatus.textContent = 'Buscando ' + (done + 1) + '/' + targets.length + ': ' + g.title + '…';
+      rawgQuickLookup(key, g.title).then(function(result) {
+        if (result) {
+          if (result.background_image) { g.coverUrl = result.background_image; filled++; }
+          if (g.metascore === null && typeof result.metacritic === 'number') g.metascore = result.metacritic;
+        } else {
+          failed++;
+        }
+      }).catch(function(err) {
+        console.error('bulk lookup failed for', g.title, err);
+        failed++;
+      }).finally(function() {
+        done++;
+        setTimeout(step, 350); // be gentle with the free API rate limit
+      });
+    }
+    step();
   });
 
   initDb();
