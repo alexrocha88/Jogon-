@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14151b">
+<title>Jogos Zerados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #14151b;
+    --bg-raised: #1b1d25;
+    --bg-card: #1f212b;
+    --bg-hover: #262835;
+    --line: #2c2e3a;
+    --text: #edeef2;
+    --text-muted: #9296a8;
+    --text-faint: #5c5f6f;
+    --accent: #f2b632;
+    --accent-dim: #a8822c;
+    --teal: #5ec8c0;
+    --green: #8fd14f;
+    --red: #e5695f;
+    --orange: #e0975a;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --radius: 10px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  button { font-family: inherit; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* ---- Header ---- */
+  header.top { margin-bottom: 24px; }
+  .eyebrow-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 5vw, 38px);
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+  .sub { color: var(--text-muted); font-size: 14.5px; margin: 0; max-width: 46ch; }
+  .save-badge {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    white-space: nowrap;
+    padding-top: 6px;
+  }
+  .save-badge.saving { color: var(--accent); }
+  .save-badge.err { color: var(--red); }
+
+  /* ---- Utility bar (export / backup / install) ---- */
+  .util-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-top: 14px;
+  }
+  .util-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    background: transparent; border: 1px solid var(--line); color: var(--text-muted);
+    border-radius: 7px; padding: 7px 11px; cursor: pointer; white-space: nowrap;
+  }
+  .util-btn:hover { background: var(--bg-hover); color: var(--text); border-color: #3a3d4d; }
+  .util-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .util-btn.install { color: var(--accent); border-color: var(--accent-dim); }
+  .util-btn.install:hover { background: rgba(242,182,50,.1); }
+  .util-status { font-size: 11.5px; color: var(--text-faint); font-family: var(--font-mono); }
+
+  .instructions-list { margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 13.5px; line-height: 1.7; }
+  .instructions-list li { margin-bottom: 4px; }
+  .instructions-browser { font-family: var(--font-display); font-weight: 600; color: var(--text); font-size: 13.5px; margin: 14px 0 4px; }
+  .instructions-browser:first-of-type { margin-top: 4px; }
+
+  .save-badge.err { color: var(--red); }
+
+  /* ---- Tabs ---- */
+  .tabs { display: flex; gap: 4px; margin-top: 18px; border-bottom: 1px solid var(--line); }
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-display); font-weight: 600; font-size: 14.5px;
+    color: var(--text-muted); padding: 9px 6px 10px; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .tab-count { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); margin-left: 3px; }
+
+  /* ---- Backlog ---- */
+  .backlog-list { display: flex; flex-direction: column; gap: 8px; }
+  .backlog-row {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 12px 14px;
+  }
+  .backlog-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .backlog-title { font-weight: 600; font-size: 15px; flex: 1 1 160px; min-width: 0; }
+  .backlog-note { font-size: 13px; color: var(--text-muted); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); line-height: 1.5; white-space: pre-wrap; }
+  .backlog-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .priority-badge {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 5px; white-space: nowrap;
+  }
+  .priority-alta { color: var(--accent); background: rgba(242,182,50,.14); }
+  .priority-media { color: var(--teal); background: rgba(94,200,192,.14); }
+  .priority-baixa { color: var(--text-muted); background: rgba(146,150,168,.12); }
+
+  /* ---- Stats strip ---- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 22px 0;
+  }
+  .stat {
+    background: var(--bg-raised);
+    padding: 14px 16px;
+    min-width: 0;
+  }
+  .stat .num {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat .lbl { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ---- Year chart ---- */
+  .chart-block {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px 12px;
+    margin-bottom: 22px;
+  }
+  .chart-title { font-size: 12.5px; color: var(--text-muted); margin-bottom: 10px; }
+  .chart-row { display: flex; align-items: flex-end; gap: 6px; height: 70px; overflow-x: auto; padding-bottom: 2px; }
+  .chart-col { display: flex; flex-direction: column; align-items: center; min-width: 26px; flex: 1 0 auto; height: 100%; justify-content: flex-end; }
+  .chart-bar { width: 100%; max-width: 22px; background: var(--accent-dim); border-radius: 3px 3px 0 0; transition: background .15s; }
+  .chart-col:hover .chart-bar { background: var(--accent); }
+  .chart-n { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-bottom: 2px; }
+  .chart-y { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-top: 4px; }
+
+  /* ---- Legend ---- */
+  .legend-block {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 22px;
+  }
+  .legend-title { font-size: 12.5px; color: var(--text-muted); margin-bottom: 10px; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+  .legend-item {
+    display: flex; align-items: baseline; gap: 6px;
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 9px;
+  }
+  .legend-letter {
+    font-family: var(--font-mono); font-weight: 600; font-size: 12.5px;
+    border-radius: 5px; padding: 1px 6px;
+  }
+  .legend-range { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+
+  /* ---- Toolbar ---- */
+  .toolbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 16px;
+  }
+  .toolbar input[type="search"], .toolbar select {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+  }
+  .toolbar input[type="search"] { flex: 1 1 200px; min-width: 140px; }
+  .toolbar select { color-scheme: dark; }
+  .toolbar input:focus, .toolbar select:focus { border-color: var(--accent-dim); }
+  .btn {
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
+    border-radius: 8px; padding: 9px 14px; cursor: pointer; border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-accent { background: var(--accent); color: #1a1305; }
+  .btn-accent:hover { background: #ffc650; }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--text); }
+  .btn-ghost:hover { background: var(--bg-hover); }
+  .btn-danger { background: transparent; border-color: var(--line); color: var(--red); }
+  .btn-danger:hover { background: rgba(229,105,95,.1); border-color: var(--red); }
+  .count-note { font-size: 12.5px; color: var(--text-faint); margin: -6px 0 14px; }
+
+  /* ---- Game list ---- */
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+  }
+  .row:hover { border-color: #3a3d4d; }
+  .row-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .plat-tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--teal);
+    background: rgba(94,200,192,.1);
+    border: 1px solid rgba(94,200,192,.25);
+    padding: 3px 7px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .row-title { font-weight: 600; font-size: 15px; flex: 1 1 180px; min-width: 0; }
+  .row-title .dlc { font-size: 10.5px; color: var(--text-faint); font-weight: 500; margin-left: 6px; }
+  .row-date { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); white-space: nowrap; }
+  .scores { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+  .score-chip { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .score-chip b { color: var(--text); }
+  .grade-badge {
+    font-family: var(--font-mono); font-weight: 600; font-size: 12.5px;
+    border-radius: 6px; padding: 3px 8px; min-width: 30px; text-align: center;
+  }
+  .chevron { color: var(--text-faint); transition: transform .15s; flex-shrink: 0; }
+  .row.open .chevron { transform: rotate(90deg); }
+  .row-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .row.open .row-detail { display: block; }
+  .row-comment { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; margin: 0 0 12px; white-space: pre-wrap; }
+  .row-actions { display: flex; gap: 8px; }
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--text-faint);
+  }
+  .empty .big { font-family: var(--font-display); font-size: 18px; color: var(--text-muted); margin-bottom: 6px; }
+
+  /* ---- Modal ---- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10,10,14,.65);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 40px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: var(--bg-raised); border: 1px solid var(--line);
+    border-radius: 14px; padding: 22px; width: 100%; max-width: 480px;
+  }
+  .modal h2 { font-family: var(--font-display); font-size: 19px; margin: 0 0 16px; }
+  .field { margin-bottom: 13px; }
+  .field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--bg-card); border: 1px solid var(--line);
+    color: var(--text); border-radius: 8px; padding: 9px 11px; font-size: 14px;
+    font-family: inherit; outline: none; color-scheme: dark;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent-dim); }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field-hint { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px; background: none; border: none;
+    color: var(--text-faint); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px;
+  }
+  .modal { position: relative; }
+
+  .loading-state { text-align: center; padding: 80px 20px; color: var(--text-faint); font-family: var(--font-mono); font-size: 13px; }
+
+  @media (max-width: 520px) {
+    .field-row { grid-template-columns: 1fr; }
+    .row-date { order: 5; }
+    .scores { width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow-row">
+      <div>
+        <h1>Jogos Zerados</h1>
+        <p class="sub">Registro pessoal de jogos finalizados — data, plataforma, notas e observações. Roda 100% offline, salvo neste navegador.</p>
+      </div>
+      <div class="save-badge" id="saveBadge">salvo neste navegador</div>
+    </div>
+    <div class="util-bar">
+      <button class="util-btn" id="btnExportExcel">⬇ Exportar Excel</button>
+      <button class="util-btn" id="btnBackup">⬇ Backup (.json)</button>
+      <button class="util-btn" id="btnRestore">⬆ Restaurar backup</button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none;">
+      <button class="util-btn install" id="btnInstall">⭳ Instalar no PC</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabDone" data-tab="done">Jogos zerados</button>
+    <button class="tab-btn" id="tabBacklog" data-tab="backlog">Fila <span class="tab-count" id="tabBacklogCount"></span></button>
+  </div>
+
+  <div id="loadingState" class="loading-state">carregando sua lista…</div>
+
+  <div id="app" style="display:none;">
+
+    <div class="stats" id="stats"></div>
+
+    <div class="chart-block">
+      <div class="chart-title">Jogos zerados por ano</div>
+      <div class="chart-row" id="chartRow"></div>
+    </div>
+
+    <div class="legend-block">
+      <div class="legend-title">Legenda das notas (minha avaliação)</div>
+      <div class="legend-row" id="legendRow"></div>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Buscar por título ou observação…">
+      <select id="filterPlatform"></select>
+      <select id="sortBy">
+        <option value="date-desc">Mais recente</option>
+        <option value="date-asc">Mais antigo</option>
+        <option value="grade-desc">Melhor nota (minha)</option>
+        <option value="metascore-desc">Melhor metascore</option>
+        <option value="title-asc">Título A–Z</option>
+      </select>
+      <button class="btn btn-accent" id="btnAdd">+ Novo jogo</button>
+    </div>
+    <div class="count-note" id="countNote"></div>
+
+    <div class="list" id="list"></div>
+    <div class="empty" id="emptyState" style="display:none;">
+      <div class="big">Nenhum jogo encontrado</div>
+      <div>Tente outro filtro ou termo de busca.</div>
+    </div>
+
+  </div>
+
+  <div id="backlogApp" style="display:none;">
+    <div class="toolbar">
+      <input type="search" id="backlogSearch" placeholder="Buscar na fila…">
+      <button class="btn btn-accent" id="btnAddBacklog">+ Adicionar à fila</button>
+    </div>
+    <div class="count-note" id="backlogCountNote"></div>
+
+    <div class="backlog-list" id="backlogList"></div>
+    <div class="empty" id="backlogEmptyState" style="display:none;">
+      <div class="big">Sua fila está vazia</div>
+      <div>Adicione os próximos jogos que você pretende zerar.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: add/edit -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose" aria-label="Fechar">×</button>
+    <h2 id="modalTitle">Novo jogo</h2>
+    <form id="gameForm">
+      <div class="field">
+        <label for="fTitle">Título</label>
+        <input type="text" id="fTitle" required autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fPlatform">Plataforma</label>
+          <input type="text" id="fPlatform" list="platformList" autocomplete="off">
+          <datalist id="platformList"></datalist>
+          <div class="field-hint">Digite livremente — não precisa ser uma das sugeridas</div>
+        </div>
+        <div class="field">
+          <label for="fDate">Data que zerou</label>
+          <input type="date" id="fDate">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fMetascore">Metascore (0–100)</label>
+          <input type="number" id="fMetascore" min="0" max="100" step="1">
+        </div>
+        <div class="field">
+          <label for="fUserscore">Nota usuários (0–10)</label>
+          <input type="number" id="fUserscore" min="0" max="10" step="0.1">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fGrade">Minha nota</label>
+        <select id="fGrade">
+          <option value="">—</option>
+          <option value="S">S (9.6 a 10)</option>
+          <option value="A">A (9.0 a 9.5)</option>
+          <option value="A-">A- (8.6 a 9.0)</option>
+          <option value="B+">B+ (8.6 a 8.9)</option>
+          <option value="B">B (8.0 a 8.5)</option>
+          <option value="B-">B- (7.6 a 7.9)</option>
+          <option value="C">C (7.0 a 7.5)</option>
+          <option value="C-">C- (6.1 a 6.9)</option>
+          <option value="D">D (5.1 a 6.0)</option>
+          <option value="D-">D- (0 a 5.0)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fComments">Observações</label>
+        <textarea id="fComments"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancel">Cancelar</button>
+        <button type="submit" class="btn btn-accent" id="btnSave">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: backlog add/edit -->
+<div class="overlay" id="backlogOverlay">
+  <div class="modal">
+    <button class="modal-close" id="backlogModalClose" aria-label="Fechar">×</button>
+    <h2 id="backlogModalTitle">Adicionar à fila</h2>
+    <form id="backlogForm">
+      <div class="field">
+        <label for="bTitle">Título</label>
+        <input type="text" id="bTitle" required autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="bPlatform">Plataforma</label>
+          <input type="text" id="bPlatform" list="platformList" autocomplete="off">
+          <div class="field-hint">Digite livremente — não precisa ser uma das sugeridas</div>
+        </div>
+        <div class="field">
+          <label for="bPriority">Prioridade</label>
+          <select id="bPriority">
+            <option value="">—</option>
+            <option value="alta">Quero muito</option>
+            <option value="media">Quero</option>
+            <option value="baixa">Sem pressa</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="bNote">Observação</label>
+        <textarea id="bNote" placeholder="Ex: esperar promoção, terminar outro jogo antes…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="btnBacklogCancel">Cancelar</button>
+        <button type="submit" class="btn btn-accent">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: install instructions -->
+<div class="overlay" id="installOverlay">
+  <div class="modal">
+    <button class="modal-close" id="installModalClose" aria-label="Fechar">×</button>
+    <h2>Instalar no PC</h2>
+    <div class="instructions-browser">Chrome ou Edge</div>
+    <ol class="instructions-list">
+      <li>Clique no ícone de instalar (⊕ ou tela com seta) que aparece do lado direito da barra de endereço — ou abra o menu <b>⋮</b>.</li>
+      <li>Escolha <b>"Instalar app"</b> (ou "Salvar e compartilhar → Instalar página como app").</li>
+      <li>Confirme. O app abre numa janela própria e fica fixado na sua área de trabalho / menu iniciar.</li>
+    </ol>
+    <div class="instructions-browser">Safari (Mac)</div>
+    <ol class="instructions-list">
+      <li>Menu Arquivo → <b>"Adicionar ao Dock"</b>.</li>
+    </ol>
+    <div class="instructions-browser">Outros navegadores</div>
+    <ol class="instructions-list">
+      <li>Procure por "Instalar site" ou "Criar atalho" no menu do navegador.</li>
+    </ol>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-accent" id="installModalOk">Entendi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  var SEED_GAMES = [{"id": "g0001", "title": "Luigi's Mansion", "platform": "Nintendo Game Cube", "finishedDateIso": "2018-07-11", "finishedDateRaw": null, "metascore": 74, "userscore": 8.2, "myGradeRaw": "B", "myGradeLetter": "B", "comments": null, "isDlc": false}, {"id": "g0002", "title": "Max the Curse of Brotherhood", "platform": "Xbox One", "finishedDateIso": "2019-04-01", "finishedDateRaw": null, "metascore": 72, "userscore": 7.4, "myGradeRaw": "B -", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0003", "title": "Batman Return of Arkham Asylium", "platform": "Xbox One", "finishedDateIso": "2019-04-16", "finishedDateRaw": null, "metascore": 73, "userscore": 8.3, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0004", "title": "Rise of the Tomb Raider", "platform": "Xbox One", "finishedDateIso": "2019-05-01", "finishedDateRaw": null, "metascore": 86, "userscore": 8.1, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0005", "title": "The Walking Dead Telltale Episódio 1", "platform": "PC", "finishedDateIso": "2019-06-28", "finishedDateRaw": null, "metascore": 82, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0006", "title": "The Walking Dead Telltale Episódio 2", "platform": "PC", "finishedDateIso": "2019-06-28", "finishedDateRaw": null, "metascore": 82, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0007", "title": "The Walking Dead Telltale Episódio 3", "platform": "PC", "finishedDateIso": "2019-07-02", "finishedDateRaw": null, "metascore": 82, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0008", "title": "Cadillac and Dinousaurs", "platform": "Arcade", "finishedDateIso": "2019-09-19", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": "Michele", "isDlc": false}, {"id": "g0009", "title": "Miracle Adventure Spin Masters", "platform": "Arcade", "finishedDateIso": "2019-09-21", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Michele e Lívia", "isDlc": false}, {"id": "g0010", "title": "Chroma Squad", "platform": "PC", "finishedDateIso": "2019-09-22", "finishedDateRaw": null, "metascore": 75, "userscore": 7.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Comprado", "isDlc": false}, {"id": "g0011", "title": "Sonic Generartions", "platform": "PC", "finishedDateIso": "2019-09-24", "finishedDateRaw": null, "metascore": 77, "userscore": 8.4, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Live Gold", "isDlc": false}, {"id": "g0012", "title": "Guacamelee Super Turbo Championship Edition", "platform": "Xbox One", "finishedDateIso": "2020-01-02", "finishedDateRaw": null, "metascore": 87, "userscore": 7.7, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": "Game Pass", "isDlc": false}, {"id": "g0013", "title": "The Last of Us Remastered", "platform": "Playstation 4", "finishedDateIso": "2020-01-07", "finishedDateRaw": null, "metascore": 95, "userscore": 9.2, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "PSN Plus", "isDlc": false}, {"id": "g0014", "title": "Gears of War 2", "platform": "Xbox 360", "finishedDateIso": "2020-01-29", "finishedDateRaw": null, "metascore": 93, "userscore": 8.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Game Pass", "isDlc": false}, {"id": "g0015", "title": "Shadow of the Tomb Raider", "platform": "Xbox One", "finishedDateIso": "2020-02-12", "finishedDateRaw": null, "metascore": null, "userscore": 7.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Game Pass", "isDlc": false}, {"id": "g0016", "title": "Super Mario 3D Land", "platform": "Nintendo 3DS", "finishedDateIso": "2020-02-26", "finishedDateRaw": null, "metascore": 90, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0017", "title": "Ori and the Blind Forest Definitive Edition", "platform": "Xbox One", "finishedDateIso": "2020-03-04", "finishedDateRaw": null, "metascore": 88, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Game Pass", "isDlc": false}, {"id": "g0018", "title": "Street of Rage", "platform": "Xbox 360", "finishedDateIso": "2020-05-03", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Michele - Game Pass", "isDlc": false}, {"id": "g0019", "title": "Street of Rage 2", "platform": "Xbox 360", "finishedDateIso": "2020-05-04", "finishedDateRaw": null, "metascore": 89, "userscore": 8.0, "myGradeRaw": "B+ (8.6 a 8.9)", "myGradeLetter": "B+", "comments": "Michele - Game Pass", "isDlc": false}, {"id": "g0020", "title": "Knights of Pen and Paper +1 Deluxier Edition", "platform": "Xbox One", "finishedDateIso": "2020-05-21", "finishedDateRaw": null, "metascore": 80, "userscore": 6.9, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Xbox Gold Fiz os dois finais", "isDlc": false}, {"id": "g0021", "title": "Injustice 2", "platform": "Xbox One", "finishedDateIso": "2020-05-23", "finishedDateRaw": null, "metascore": 87, "userscore": 7.9, "myGradeRaw": "C-", "myGradeLetter": "C-", "comments": "jogo do Gabriel", "isDlc": false}, {"id": "g0022", "title": "Overcooked", "platform": "Xbox One", "finishedDateIso": "2020-06-15", "finishedDateRaw": null, "metascore": 78, "userscore": 7.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Com Michele", "isDlc": false}, {"id": "g0023", "title": "Dlc 1 Overcooked", "platform": "Xbox One", "finishedDateIso": "2020-06-15", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": null, "myGradeLetter": null, "comments": "Com Michele", "isDlc": true}, {"id": "g0024", "title": "The Last of Us - Left Behind", "platform": "Playstation 4", "finishedDateIso": "2020-06-19", "finishedDateRaw": null, "metascore": 88, "userscore": 8.1, "myGradeRaw": "C", "myGradeLetter": "C", "comments": "Dlc", "isDlc": false}, {"id": "g0025", "title": "God of War 4", "platform": "Playstation 4", "finishedDateIso": null, "finishedDateRaw": null, "metascore": 94, "userscore": 9.0, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0026", "title": "Brothers a Tale of Two Sons", "platform": "Nintendo Switch", "finishedDateIso": null, "finishedDateRaw": null, "metascore": 86, "userscore": 8.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "com a Michele", "isDlc": false}, {"id": "g0027", "title": "The legend of Zelda A Link's Awekinings", "platform": "Nintendo Switch", "finishedDateIso": null, "finishedDateRaw": null, "metascore": 87, "userscore": 8.3, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0028", "title": "Star Wars Jedi Fallen Order", "platform": "Xbox One", "finishedDateIso": "2020-11-22", "finishedDateRaw": null, "metascore": 79, "userscore": 7.6, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "primeiro zerado no xbox series s", "isDlc": false}, {"id": "g0029", "title": "Stranger Things 3 The Game", "platform": "Xbox One", "finishedDateIso": "2020-11-25", "finishedDateRaw": null, "metascore": 72, "userscore": 5.4, "myGradeRaw": "C (7.0 a 7.5)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0030", "title": "Gears of War 3", "platform": "Xbox 360", "finishedDateIso": "2020-11-27", "finishedDateRaw": null, "metascore": 91, "userscore": 8.2, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0031", "title": "Gears of War Judgment", "platform": "Xbox 360", "finishedDateIso": "2020-11-29", "finishedDateRaw": null, "metascore": 79, "userscore": 5.9, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0032", "title": "Gears of War Judgment Aftermatch", "platform": "Xbox 360", "finishedDateIso": "2020-11-29", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0033", "title": "Assassin's Creed 2", "platform": "Playstation 4", "finishedDateIso": "2021-03-27", "finishedDateRaw": null, "metascore": 90, "userscore": 8.8, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0034", "title": "Spider Man", "platform": "Playstation 4", "finishedDateIso": "2021-09-12", "finishedDateRaw": null, "metascore": 87, "userscore": 8.7, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerado no ps5", "isDlc": false}, {"id": "g0035", "title": "Luigi's Mansion 3", "platform": "Nintendo Switch", "finishedDateIso": "2021-09-24", "finishedDateRaw": null, "metascore": 86, "userscore": 8.4, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": "Cluber Gamer", "isDlc": false}, {"id": "g0036", "title": "Horizon Zero Dawn", "platform": "Playstation 4", "finishedDateIso": "2021-11-12", "finishedDateRaw": null, "metascore": 89, "userscore": 8.3, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Zerado no ps5", "isDlc": false}, {"id": "g0037", "title": "Horizon Zero Dawn The Frozen Wilds", "platform": "Playstation 4/DLC", "finishedDateIso": "2021-11-16", "finishedDateRaw": null, "metascore": 89, "userscore": 7.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerado no ps5", "isDlc": true}, {"id": "g0038", "title": "Gears of War 4", "platform": "PC", "finishedDateIso": "2022-01-10", "finishedDateRaw": null, "metascore": 84, "userscore": 7.1, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Zerado Game pass", "isDlc": false}, {"id": "g0039", "title": "Mafia II Definitive Edition", "platform": "PC", "finishedDateIso": "2022-03-19", "finishedDateRaw": null, "metascore": 78, "userscore": 7.6, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Epic Games (Comprado)", "isDlc": false}, {"id": "g0040", "title": "Life is Strange", "platform": "Xbox", "finishedDateIso": "2022-05-21", "finishedDateRaw": null, "metascore": 85, "userscore": 8.6, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Gold series s platinado", "isDlc": false}, {"id": "g0041", "title": "Life is Strange Before the Storm Remastered", "platform": "Xbox Series S", "finishedDateIso": "2022-05-31", "finishedDateRaw": null, "metascore": 77, "userscore": 7.9, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "One Flix Platinado", "isDlc": false}, {"id": "g0042", "title": "Life is Strange Before the Storm Remastered Farewell", "platform": "Xbox Series S", "finishedDateIso": "2022-05-31", "finishedDateRaw": null, "metascore": 80, "userscore": 7.8, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": "One Flix nao tem conquistas", "isDlc": false}, {"id": "g0043", "title": "It Takes Two", "platform": "Xbox Series S", "finishedDateIso": "2022-06-02", "finishedDateRaw": null, "metascore": 88, "userscore": 8.8, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Game Pass (Ea Access) zerado com a Michele", "isDlc": false}, {"id": "g0044", "title": "Assassin's Creed Brotherhood", "platform": "Xbox Series S", "finishedDateIso": "2022-06-17", "finishedDateRaw": null, "metascore": 89, "userscore": 8.3, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "meu jogo", "isDlc": false}, {"id": "g0045", "title": "Days Gone", "platform": "Playstation 5", "finishedDateIso": "2022-07-02", "finishedDateRaw": null, "metascore": 78, "userscore": 8.8, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "plus compra console", "isDlc": false}, {"id": "g0046", "title": "Teenage Mutant Ninja Turtles: Shredder's Revenge", "platform": "Xbox Series S", "finishedDateIso": "2022-07-04", "finishedDateRaw": null, "metascore": 87, "userscore": 7.4, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "gamepass", "isDlc": false}, {"id": "g0047", "title": "Senhor dos anéis Sombras de Mordor Edição Jogo do Ano", "platform": "Xbox Series S", "finishedDateIso": "2022-08-07", "finishedDateRaw": null, "metascore": 84, "userscore": 7.9, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "oneflix", "isDlc": false}, {"id": "g0048", "title": "A Plague Tale Innocence", "platform": "Xbox Series S", "finishedDateIso": "2022-09-03", "finishedDateRaw": null, "metascore": 81, "userscore": 8.2, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Game Pass", "isDlc": false}, {"id": "g0049", "title": "Space Jam A New Legacy The Game", "platform": "Xbox Series S", "finishedDateIso": "2022-11-15", "finishedDateRaw": null, "metascore": 53, "userscore": 5.3, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "grátis", "isDlc": false}, {"id": "g0050", "title": "Hi-Fi Rush", "platform": "Xbox Series S", "finishedDateIso": "2023-02-09", "finishedDateRaw": null, "metascore": 87, "userscore": 8.8, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Game Pass", "isDlc": false}, {"id": "g0051", "title": "Overcooked 2", "platform": "Xbox Series S", "finishedDateIso": "2023-02-13", "finishedDateRaw": null, "metascore": 81, "userscore": 7.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "com a Michele", "isDlc": false}, {"id": "g0052", "title": "Tunic", "platform": "Xbox Series S", "finishedDateIso": "2023-03-18", "finishedDateRaw": null, "metascore": 85, "userscore": 7.9, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Game Pass platinado", "isDlc": false}, {"id": "g0053", "title": "A Memoir Blue", "platform": "Xbox Series S", "finishedDateIso": "2023-03-18", "finishedDateRaw": null, "metascore": 71, "userscore": 6.0, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Game pass platinado", "isDlc": false}, {"id": "g0054", "title": "Mario Kart 8 Deluxe", "platform": "Nintendo Switch", "finishedDateIso": "2023-04-15", "finishedDateRaw": null, "metascore": 92, "userscore": 8.6, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Emulador de Switch no PC. Modo 50 cc zerado, mas nem todas as estrelas. Participação de Livia, Michele e Mateus", "isDlc": false}, {"id": "g0055", "title": "QuackShot Starring Donald Duck", "platform": "Mega Drive", "finishedDateIso": "2023-05-16", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0056", "title": "Spider Man Miles Morales", "platform": "PC", "finishedDateIso": "2023-05-24", "finishedDateRaw": null, "metascore": 85, "userscore": 7.6, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": "Torrent", "isDlc": false}, {"id": "g0057", "title": "Ghotswire Tokyo", "platform": "Xbox Series S", "finishedDateIso": "2023-10-12", "finishedDateRaw": null, "metascore": 75, "userscore": 7.2, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerei o Jogo + 1 Quest da DLC (menos o modo fio de aranha) / GamePass", "isDlc": false}, {"id": "g0058", "title": "Pokémon Fire Red", "platform": "Game Boy Advance", "finishedDateIso": "2023-10-28", "finishedDateRaw": null, "metascore": 81, "userscore": 8.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": "Zerei o jogo enfretando a Elite four duas vezes (primeira vez que zero passando pela segunda vez da e4 que é mais dificil) Time Usado Blastoise, MR. Mime, NidoKing, Arcanine, Frearow e Vileplume nas duas ligas", "isDlc": false}, {"id": "g0059", "title": "Casper", "platform": "Super Nintendo", "finishedDateIso": "2023-12-01", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Emulador no PC", "isDlc": false}, {"id": "g0060", "title": "Dark Pictures House of Ashes", "platform": "Playstation 5", "finishedDateIso": "2024-01-26", "finishedDateRaw": null, "metascore": 72, "userscore": 7.3, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Psn plus", "isDlc": false}, {"id": "g0061", "title": "South Park the Stick of Thuth", "platform": "Playstation 5", "finishedDateIso": "2024-01-31", "finishedDateRaw": null, "metascore": 85, "userscore": 8.5, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "PSN PLUS PLATINADO", "isDlc": false}, {"id": "g0062", "title": "Silent Hill The Short Message", "platform": "Playstation 5", "finishedDateIso": "2024-02-02", "finishedDateRaw": null, "metascore": 52, "userscore": 6.1, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Jogo grátis", "isDlc": false}, {"id": "g0063", "title": "Uncharted Drake's Fortune", "platform": "Playstation 5", "finishedDateIso": "2024-02-03", "finishedDateRaw": null, "metascore": 88, "userscore": 7.7, "myGradeRaw": "B", "myGradeLetter": "B", "comments": "Psn plus", "isDlc": false}, {"id": "g0064", "title": "Uncharted 2 Among Thieves", "platform": "Playstation 5", "finishedDateIso": "2024-02-06", "finishedDateRaw": null, "metascore": 96, "userscore": 8.9, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": null, "isDlc": false}, {"id": "g0065", "title": "Uncharted 3 Drake's Deception", "platform": "Playstation 5", "finishedDateIso": "2024-02-10", "finishedDateRaw": null, "metascore": 92, "userscore": 8.4, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0066", "title": "Nobody's Saves The World", "platform": "Playstation 5", "finishedDateIso": "2024-02-13", "finishedDateRaw": null, "metascore": 79, "userscore": 7.4, "myGradeRaw": "B-", "myGradeLetter": "B-", "comments": "Com a Michele", "isDlc": false}, {"id": "g0067", "title": "Uncharted 4 A Thief's End", "platform": "Playstation 5", "finishedDateIso": "2024-02-14", "finishedDateRaw": null, "metascore": 93, "userscore": 8.7, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": null, "isDlc": false}, {"id": "g0068", "title": "Uncharted The Lost Legacy", "platform": "Playstation 5", "finishedDateIso": "2024-02-15", "finishedDateRaw": null, "metascore": 84, "userscore": 8.0, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0069", "title": "Spider Man 2", "platform": "Playstation 5", "finishedDateIso": "2024-03-02", "finishedDateRaw": null, "metascore": 90, "userscore": 8.6, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "100% das missoes, side Quest e colecionáveis", "isDlc": false}, {"id": "g0070", "title": "NIOH Remastered", "platform": "Playstation 5", "finishedDateIso": null, "finishedDateRaw": "Em algum momento entre março e abril", "metascore": 88, "userscore": 8.1, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": null, "isDlc": false}, {"id": "g0071", "title": "The Gunk", "platform": "PC", "finishedDateIso": "2024-05-25", "finishedDateRaw": null, "metascore": 70, "userscore": 6.7, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Game Pass PC", "isDlc": false}, {"id": "g0072", "title": "Echo Generation Midnight Edition", "platform": "Nintendo Switch", "finishedDateIso": "2024-07-07", "finishedDateRaw": null, "metascore": 70, "userscore": null, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Piratão", "isDlc": false}, {"id": "g0073", "title": "Super Mario 3D World", "platform": "Nintendo Switch", "finishedDateIso": "2024-11-17", "finishedDateRaw": null, "metascore": 89, "userscore": 8.6, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Zerado com a Michele 100% (Todas as Estrelas e Carimbos) No dia 17/11 também Fizemos 100% da Star Road", "isDlc": false}, {"id": "g0074", "title": "Luigi´s Mansion 3", "platform": "Nintendo Switch", "finishedDateIso": "2024-11-23", "finishedDateRaw": null, "metascore": 86, "userscore": 8.4, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0075", "title": "CyberPunk 2077", "platform": "PC", "finishedDateIso": "2024-12-21", "finishedDateRaw": null, "metascore": 85, "userscore": 8.7, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Steam Família. Fiz o Final que o V fica com a Panam, volta pro corpo, tem 6 meses de vida e sai de Night City com a Panam", "isDlc": false}, {"id": "g0076", "title": "CyberPunk 2077 Phantom Liberty", "platform": "PC/DLC", "finishedDateIso": "2024-12-23", "finishedDateRaw": null, "metascore": 89, "userscore": 8.9, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Stam Família. Fiz o Final que enviei a Song pra Lua e matei o Reed", "isDlc": true}, {"id": "g0077", "title": "Indika", "platform": "PC", "finishedDateIso": "2024-12-25", "finishedDateRaw": null, "metascore": 80, "userscore": 7.0, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Piratão", "isDlc": false}, {"id": "g0078", "title": "Gears 5", "platform": "PC", "finishedDateIso": "2024-12-31", "finishedDateRaw": null, "metascore": 84, "userscore": 8.2, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Fiz o final salvando o Del", "isDlc": false}, {"id": "g0079", "title": "Gears 5 – Hivebusters", "platform": "PC/DLC", "finishedDateIso": "2025-01-02", "finishedDateRaw": null, "metascore": 82, "userscore": 7.6, "myGradeRaw": "C -", "myGradeLetter": "C-", "comments": null, "isDlc": true}, {"id": "g0080", "title": "Crash Bandicoot", "platform": "PC", "finishedDateIso": "2025-03-04", "finishedDateRaw": null, "metascore": 80, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "PC Game Pass Zerei com a Michele", "isDlc": false}, {"id": "g0081", "title": "Mega Man 1", "platform": "PC/NES", "finishedDateIso": "2025-03-10", "finishedDateRaw": null, "metascore": 80, "userscore": 7.2, "myGradeRaw": "D - (0.0 a 5.0)", "myGradeLetter": "D-", "comments": "Primeiro Mega Man zerado na coletânea Mega Man Legacy da Steam", "isDlc": false}, {"id": "g0082", "title": "Mega Man 2", "platform": "PC/NES", "finishedDateIso": "2025-03-10", "finishedDateRaw": null, "metascore": 80, "userscore": 7.2, "myGradeRaw": "D - (0.0 a 5.0)", "myGradeLetter": "D-", "comments": "Segundo Mega Man zerado na coletânea Mega Man Legacy da Steam", "isDlc": false}, {"id": "g0083", "title": "Split Fiction", "platform": "PC", "finishedDateIso": "2025-03-13", "finishedDateRaw": null, "metascore": 91, "userscore": 8.6, "myGradeRaw": "A-", "myGradeLetter": "A-", "comments": "Zerado com a Michele pelo Hydra. Fizemos todas as histórias secundárias", "isDlc": false}, {"id": "g0084", "title": "Pokémon Fire Red", "platform": "Game Boy Advance", "finishedDateIso": "2025-04-04", "finishedDateRaw": null, "metascore": 81, "userscore": 8.4, "myGradeRaw": "A", "myGradeLetter": "A", "comments": "Celular com o Time Venosaur, Moltres, Nidoking, Vaporeaon, Aerodactyl e Parasect de HM Slave", "isDlc": false}, {"id": "g0085", "title": "Clair Obscure Expedition 33", "platform": "PC", "finishedDateIso": "2025-06-20", "finishedDateRaw": null, "metascore": 92, "userscore": 8.5, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Hydra - FIz o final da Maelle. Melhor jogo da minha vida", "isDlc": false}, {"id": "g0086", "title": "Elden Ring", "platform": "PC", "finishedDateIso": "2025-08-08", "finishedDateRaw": null, "metascore": 96, "userscore": 8.4, "myGradeRaw": "A -", "myGradeLetter": "A-", "comments": "Platinado, usei o save em nuvem", "isDlc": false}, {"id": "g0087", "title": "CupHead", "platform": "PC", "finishedDateIso": "2025-08-09", "finishedDateRaw": null, "metascore": 86, "userscore": 8.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Finalizei com a Livia, usamos cheat de tiro e vida", "isDlc": false}, {"id": "g0088", "title": "Cuphead – The Delicious Last Course", "platform": "PC/DLC", "finishedDateIso": "2025-08-09", "finishedDateRaw": null, "metascore": 86, "userscore": 8.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Finalizei com a Livia, usamos cheat de tiro e vida", "isDlc": true}, {"id": "g0089", "title": "Mortal Kombat 11", "platform": "PC", "finishedDateIso": "2025-08-13", "finishedDateRaw": null, "metascore": 82, "userscore": 4.4, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Modo História, fiz o final canônico, onde ganho a luta mas perco 1 round para Kronica. Esse final que leva a história da DLC, fiz sem querer, n sabia kkk", "isDlc": false}, {"id": "g0090", "title": "Mortal Kombat 11 Aftermath", "platform": "PC/DLC", "finishedDateIso": "2025-08-15", "finishedDateRaw": null, "metascore": 82, "userscore": 4.4, "myGradeRaw": "D", "myGradeLetter": "D", "comments": "Modo História, fiz o final bom, do Liu Kang", "isDlc": true}, {"id": "g0091", "title": "Lovers in a Dangerous Spacetime", "platform": "PC", "finishedDateIso": "2025-08-23", "finishedDateRaw": null, "metascore": 82, "userscore": 7.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0092", "title": "Atlas Fallen Reign of Sand", "platform": "PC", "finishedDateIso": "2025-09-06", "finishedDateRaw": null, "metascore": 64, "userscore": 6.2, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Hydra", "isDlc": false}, {"id": "g0093", "title": "Resident Evil 5 Gold Edition", "platform": "PC", "finishedDateIso": "2025-09-19", "finishedDateRaw": null, "metascore": 83, "userscore": 7.2, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0094", "title": "Brothers a Tale of Two Sons Remake", "platform": "PC", "finishedDateIso": "2025-09-20", "finishedDateRaw": null, "metascore": 86, "userscore": 8.3, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Zerado com a Michele", "isDlc": false}, {"id": "g0095", "title": "Streets of Rage", "platform": "PC/Emulador", "finishedDateIso": "2025-09-26", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0096", "title": "Street of Rage 2", "platform": "PC/Emulador", "finishedDateIso": "2025-09-28", "finishedDateRaw": null, "metascore": 89, "userscore": 8.0, "myGradeRaw": "B+ (8.6 a 8.9)", "myGradeLetter": "B+", "comments": "Zerado com a Livia", "isDlc": false}, {"id": "g0097", "title": "Black Mesa", "platform": "PC", "finishedDateIso": "2025-10-04", "finishedDateRaw": null, "metascore": 84, "userscore": 8.7, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Remake de Half Life 1 feito por fãs", "isDlc": false}, {"id": "g0098", "title": "Stellar Blade", "platform": "PC", "finishedDateIso": "2025-11-01", "finishedDateRaw": null, "metascore": 81, "userscore": 9.1, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0099", "title": "Pokémon Emerald", "platform": "Game Boy Advance", "finishedDateIso": "2025-11-20", "finishedDateRaw": null, "metascore": 76, "userscore": 8.8, "myGradeRaw": "B (8.0 a 8.5)", "myGradeLetter": "B", "comments": "Time Aggron, Machamp, Swellon, Magneton, Camerupt e Swampert", "isDlc": false}, {"id": "g0100", "title": "Super Mario RPG", "platform": "Nintendo Switch", "finishedDateIso": "2025-11-22", "finishedDateRaw": null, "metascore": 84, "userscore": 8.0, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0101", "title": "The Legend of Zelda Ocarina Of Time (Ship of Harkinian)", "platform": "Nintendo 64", "finishedDateIso": "2025-11-30", "finishedDateRaw": null, "metascore": 99, "userscore": 9.1, "myGradeRaw": "S (9.6 a 10)", "myGradeLetter": "S", "comments": "Port de PC como Mod Gráfico", "isDlc": false}, {"id": "g0102", "title": "Pokémon SoulSilver", "platform": "Nintendo DS", "finishedDateIso": "2025-12-06", "finishedDateRaw": null, "metascore": 87, "userscore": 9.1, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "Zerei a parte de Johto com o time Typhlosion, Dragonite, Ampharos, Lugia, Poliwrath e Victreebel", "isDlc": false}, {"id": "g0103", "title": "Nioh 2", "platform": "PC", "finishedDateIso": "2025-12-24", "finishedDateRaw": null, "metascore": 86, "userscore": 7.6, "myGradeRaw": "A - (8.6 a 9)", "myGradeLetter": "A-", "comments": "59 horas", "isDlc": false}, {"id": "g0104", "title": "South of Midnight", "platform": "PC", "finishedDateIso": "2025-12-26", "finishedDateRaw": null, "metascore": 77, "userscore": 6.8, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": null, "isDlc": false}, {"id": "g0105", "title": "Castle Crashers", "platform": "PC", "finishedDateIso": "2025-12-30", "finishedDateRaw": null, "metascore": 83, "userscore": 8.4, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Livia", "isDlc": false}, {"id": "g0106", "title": "Kingdom Come Deliverance: O Destino de uma Mulher", "platform": "PC/DLC", "finishedDateIso": "2026-01-04", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": null, "myGradeLetter": null, "comments": "Zerei a dlc primeiro, pq sem querer entrei nela e não dava pra sair. Desisti do jogo base", "isDlc": true}, {"id": "g0107", "title": "Katana Zero", "platform": "PC", "finishedDateIso": "2026-02-01", "finishedDateRaw": null, "metascore": 83, "userscore": 8.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": null, "isDlc": false}, {"id": "g0108", "title": "Mega Man 3", "platform": "PC/NES", "finishedDateIso": "2026-02-07", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D - (0 a 5)", "myGradeLetter": "D-", "comments": null, "isDlc": false}, {"id": "g0109", "title": "Resident Evil 0 Remake", "platform": "PC", "finishedDateIso": "2026-02-18", "finishedDateRaw": null, "metascore": 70, "userscore": 7.4, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": null, "isDlc": false}, {"id": "g0110", "title": "Resident Evil 1 HD Remaster", "platform": "PC", "finishedDateIso": "2026-02-22", "finishedDateRaw": null, "metascore": 83, "userscore": 8.5, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": "Final perfeito da Jill", "isDlc": false}, {"id": "g0111", "title": "Resident Evil 1 HD Remaster", "platform": "PC", "finishedDateIso": "2026-03-01", "finishedDateRaw": null, "metascore": 83, "userscore": 8.5, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": "Final perfeito do Chris", "isDlc": false}, {"id": "g0112", "title": "Crash Bandicoot 2", "platform": "PC", "finishedDateIso": "2026-03-03", "finishedDateRaw": null, "metascore": 80, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerei com a Michele", "isDlc": false}, {"id": "g0113", "title": "Crash Bandicoot 3", "platform": "PC", "finishedDateIso": "2026-03-04", "finishedDateRaw": null, "metascore": 80, "userscore": 8.3, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerei com a Michele", "isDlc": false}, {"id": "g0114", "title": "Resident Evil 3", "platform": "PC", "finishedDateIso": "2026-03-09", "finishedDateRaw": null, "metascore": 79, "userscore": 6.8, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": null, "isDlc": false}, {"id": "g0115", "title": "Super Mario Bros.", "platform": "Super Nintendo", "finishedDateIso": "2026-03-11", "finishedDateRaw": null, "metascore": 84, "userscore": 8.0, "myGradeRaw": "C (7.0 a 7.4)", "myGradeLetter": "C", "comments": "Zerado com a Michele a versão do Super Mario All-Stars", "isDlc": false}, {"id": "g0116", "title": "Bang Average Football", "platform": "PC", "finishedDateIso": "2026-04-18", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": null, "isDlc": false}, {"id": "g0117", "title": "Star Fox 64 3DS", "platform": "Nintendo 3DS", "finishedDateIso": "2026-05-08", "finishedDateRaw": null, "metascore": 81, "userscore": 8.0, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0118", "title": "Pragmata", "platform": "PC", "finishedDateIso": "2026-05-11", "finishedDateRaw": null, "metascore": 85, "userscore": 8.8, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0119", "title": "Parasite Eve", "platform": "Playstation", "finishedDateIso": "2026-05-17", "finishedDateRaw": null, "metascore": 81, "userscore": 8.7, "myGradeRaw": "B (8.0 a 8.4)", "myGradeLetter": "B", "comments": "Não fiz o segundo final pq é repetitivo. Assisti no Youtube", "isDlc": false}, {"id": "g0120", "title": "Marvel Cosmic Invasion", "platform": "PC", "finishedDateIso": "2026-05-24", "finishedDateRaw": null, "metascore": 81, "userscore": 7.5, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Game Pass. Zerei com a Livia (jogou 90% no coop online cm outros players)", "isDlc": false}, {"id": "g0121", "title": "Final Fantasy 1 Pixel Remaster", "platform": "PC", "finishedDateIso": "2026-06-04", "finishedDateRaw": null, "metascore": 80, "userscore": 6.8, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Platinado no mesmo dia. Game Pass", "isDlc": false}, {"id": "g0122", "title": "Final Fantasy 2 Pixel Remaster", "platform": "PC", "finishedDateIso": "2026-06-18", "finishedDateRaw": null, "metascore": 77, "userscore": 5.8, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Platinado no mesmo dia. Game Pass", "isDlc": false}, {"id": "g0123", "title": "Chasm", "platform": "PC", "finishedDateIso": "2026-08-07", "finishedDateRaw": null, "metascore": 72, "userscore": 6.7, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": null, "isDlc": false}, {"id": "g0124", "title": "Toziuha Night Dracula's Revenge", "platform": "PC", "finishedDateIso": "2026-08-08", "finishedDateRaw": null, "metascore": null, "userscore": null, "myGradeRaw": "D (5.1 a 6)", "myGradeLetter": "D", "comments": "Jogabilidade ruim, porém até que a história apesar de básica e previsível, é legalzinha, um jogo curto de um desenvolvedor iniciante. Serviu para me apresentar o universo e me aventurar na continuação que é metroidvania", "isDlc": false}, {"id": "g0125", "title": "Donkey Kong Country", "platform": "Super Nintendo", "finishedDateIso": "2026-08-10", "finishedDateRaw": null, "metascore": 78, "userscore": 8.7, "myGradeRaw": "C - (6.1 a 6.9)", "myGradeLetter": "C-", "comments": "Até para época era básico, repetitivo. Acho que só fez sucesso pelo efeito 3D", "isDlc": false}, {"id": "g0126", "title": "Dark Souls - Artorias of the Abyss Remastered", "platform": "PC", "finishedDateIso": "2026-08-22", "finishedDateRaw": null, "metascore": 89, "userscore": 8.8, "myGradeRaw": "B-", "myGradeLetter": "B-", "comments": "Ja tinha matado ontem o boss final da dlc sem saber, então considero zerado hj, as minhas considerações são as mesmas do jogo base, com o agravante da dlc ser mais vazia e sem sentido algum tanto de história, tando da mecânica que precisa fazer parar jogar ela.", "isDlc": false}, {"id": "g0127", "title": "Darks Souls Remastered", "platform": "PC", "finishedDateIso": "2026-08-22", "finishedDateRaw": null, "metascore": 84, "userscore": 8.4, "myGradeRaw": "B", "myGradeLetter": "B", "comments": "Não gosto do jeito da From contar a lore, fora isso é um jogo OK. Tem partes vazias, muitas areas opcionais que se você nao jogar com um guia, n fica sabendo da existência ou fica preso ali sem saber  que o caminho não é por ali agora ou que nem precisa estar. Muitas mecânicas para bosses e acesso a locais você so fica sabendo se consultar guias. Alguns bosses foram claramente criados para testar mecânicas para os futuros jogos da produtora. Acho que não jogarei os outros e nem mais jogos da produtora que não conte a história de forma padrão. Fiz o final que eu livro a humanidade me tornando o lorde da escuridão", "isDlc": false}, {"id": "g0128", "title": "007 First Light", "platform": "PC", "finishedDateIso": "2026-09-02", "finishedDateRaw": null, "metascore": 87, "userscore": 8.3, "myGradeRaw": "A (9.0 a 9.5)", "myGradeLetter": "A", "comments": null, "isDlc": false}, {"id": "g0129", "title": "Hollow Knight", "platform": "PC", "finishedDateIso": "2026-09-13", "finishedDateRaw": null, "metascore": 89, "userscore": 9.0, "myGradeRaw": "B - (7.6 a 7.9)", "myGradeLetter": "B-", "comments": "Nota polêmica, mas acho que os desafios finais e os chefes finais tem uma curva de dificuldade maior que todo o jogo, do nada o jogo vira um super meat boy. O final é curto, a maioria das habilidades não são usadas pq as batalhas são frenéticas, acho que geral um hype e o pessoal da nota alta pq viralizou", "isDlc": false}, {"id": "g0130", "title": "High On Life", "platform": "PC", "finishedDateIso": "2026-09-19", "finishedDateRaw": null, "metascore": 67, "userscore": 7.6, "myGradeRaw": "A -", "myGradeLetter": "A-", "comments": "Se você usar toda a jogabilidade a seu favor, utilizando todas as armas, se torna um jogo muito divertido. Fora os diálogos. Geralmente não gosto de comédia, mas esse é muito boa!", "isDlc": false}];
+  var STORAGE_KEY = 'jogosZeradosData';
+
+  // ---------- grade metadata ----------
+  var GRADE_META = {
+    'S':  { order: 10, val: 9.8, color: '#f2b632', bg: 'rgba(242,182,50,.14)', range: '9.6–10' },
+    'A':  { order: 9,  val: 9.25,color: '#8fd14f', bg: 'rgba(143,209,79,.14)', range: '9.0–9.5' },
+    'A-': { order: 8,  val: 8.8, color: '#8fd14f', bg: 'rgba(143,209,79,.14)', range: '8.6–9.0' },
+    'B+': { order: 7.5,val: 8.75,color: '#5ec8c0', bg: 'rgba(94,200,192,.14)', range: '8.6–8.9' },
+    'B':  { order: 7,  val: 8.25,color: '#5ec8c0', bg: 'rgba(94,200,192,.14)', range: '8.0–8.5' },
+    'B-': { order: 6,  val: 7.75,color: '#5ec8c0', bg: 'rgba(94,200,192,.14)', range: '7.6–7.9' },
+    'C':  { order: 5,  val: 7.25,color: '#9296a8', bg: 'rgba(146,150,168,.12)', range: '7.0–7.5' },
+    'C-': { order: 4,  val: 6.5, color: '#9296a8', bg: 'rgba(146,150,168,.12)', range: '6.1–6.9' },
+    'D':  { order: 3,  val: 5.5, color: '#e0975a', bg: 'rgba(224,151,90,.14)', range: '5.1–6.0' },
+    'D-': { order: 2,  val: 2.5, color: '#e5695f', bg: 'rgba(229,105,95,.14)', range: '0–5.0' }
+  };
+  var GRADE_ORDER_LIST = ['S', 'A', 'A-', 'B+', 'B', 'B-', 'C', 'C-', 'D', 'D-'];
+
+  var els = {
+    loadingState: document.getElementById('loadingState'),
+    app: document.getElementById('app'),
+    stats: document.getElementById('stats'),
+    chartRow: document.getElementById('chartRow'),
+    search: document.getElementById('search'),
+    filterPlatform: document.getElementById('filterPlatform'),
+    sortBy: document.getElementById('sortBy'),
+    list: document.getElementById('list'),
+    emptyState: document.getElementById('emptyState'),
+    countNote: document.getElementById('countNote'),
+    legendRow: document.getElementById('legendRow'),
+    saveBadge: document.getElementById('saveBadge'),
+    btnAdd: document.getElementById('btnAdd'),
+    overlay: document.getElementById('overlay'),
+    modalTitle: document.getElementById('modalTitle'),
+    modalClose: document.getElementById('modalClose'),
+    btnCancel: document.getElementById('btnCancel'),
+    gameForm: document.getElementById('gameForm'),
+    fTitle: document.getElementById('fTitle'),
+    fPlatform: document.getElementById('fPlatform'),
+    fDate: document.getElementById('fDate'),
+    fMetascore: document.getElementById('fMetascore'),
+    fUserscore: document.getElementById('fUserscore'),
+    fGrade: document.getElementById('fGrade'),
+    fComments: document.getElementById('fComments'),
+    platformList: document.getElementById('platformList'),
+    btnExportExcel: document.getElementById('btnExportExcel'),
+    btnBackup: document.getElementById('btnBackup'),
+    btnRestore: document.getElementById('btnRestore'),
+    restoreInput: document.getElementById('restoreInput'),
+    btnInstall: document.getElementById('btnInstall'),
+    installOverlay: document.getElementById('installOverlay'),
+    installModalClose: document.getElementById('installModalClose'),
+    installModalOk: document.getElementById('installModalOk'),
+    tabDone: document.getElementById('tabDone'),
+    tabBacklog: document.getElementById('tabBacklog'),
+    tabBacklogCount: document.getElementById('tabBacklogCount'),
+    backlogApp: document.getElementById('backlogApp'),
+    backlogSearch: document.getElementById('backlogSearch'),
+    btnAddBacklog: document.getElementById('btnAddBacklog'),
+    backlogCountNote: document.getElementById('backlogCountNote'),
+    backlogList: document.getElementById('backlogList'),
+    backlogEmptyState: document.getElementById('backlogEmptyState'),
+    backlogOverlay: document.getElementById('backlogOverlay'),
+    backlogModalTitle: document.getElementById('backlogModalTitle'),
+    backlogModalClose: document.getElementById('backlogModalClose'),
+    backlogForm: document.getElementById('backlogForm'),
+    bTitle: document.getElementById('bTitle'),
+    bPlatform: document.getElementById('bPlatform'),
+    bPriority: document.getElementById('bPriority'),
+    bNote: document.getElementById('bNote'),
+    btnBacklogCancel: document.getElementById('btnBacklogCancel')
+  };
+
+  var state = {
+    games: [],          // array of {id, ...fields}
+    backlog: [],         // array of {id, title, platform, priority, note}
+    openRow: null,
+    editingId: null,
+    editingBacklogId: null,
+    convertingBacklogId: null  // backlog id being converted into a finished game
+  };
+
+  // ---------- helpers ----------
+  function esc(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function fmtDate(g) {
+    if (g.finishedDateIso) {
+      var d = new Date(g.finishedDateIso + 'T00:00:00');
+      if (!isNaN(d)) {
+        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+    }
+    if (g.finishedDateRaw) return g.finishedDateRaw;
+    return 'sem data';
+  }
+  function yearOf(g) {
+    if (g.finishedDateIso) return g.finishedDateIso.slice(0, 4);
+    return null;
+  }
+  function setSaveBadge(mode) {
+    if (mode === 'saving') { els.saveBadge.textContent = 'salvando…'; els.saveBadge.className = 'save-badge saving'; }
+    else if (mode === 'err') { els.saveBadge.textContent = 'erro ao salvar'; els.saveBadge.className = 'save-badge err'; }
+    else { els.saveBadge.textContent = 'salvo neste navegador'; els.saveBadge.className = 'save-badge'; }
+  }
+
+  // ---------- rendering ----------
+  function computeStats(games) {
+    var total = games.length;
+    var byPlatform = {};
+    var byYear = {};
+    var gradeVals = [], metaVals = [], userVals = [];
+    games.forEach(function(g) {
+      if (g.platform) byPlatform[g.platform] = (byPlatform[g.platform] || 0) + 1;
+      var y = yearOf(g);
+      if (y) byYear[y] = (byYear[y] || 0) + 1;
+      if (g.myGradeLetter && GRADE_META[g.myGradeLetter]) gradeVals.push(GRADE_META[g.myGradeLetter].val);
+      if (typeof g.metascore === 'number') metaVals.push(g.metascore);
+      if (typeof g.userscore === 'number') userVals.push(g.userscore);
+    });
+    var favPlatform = '—', favCount = 0;
+    Object.keys(byPlatform).forEach(function(p) { if (byPlatform[p] > favCount) { favCount = byPlatform[p]; favPlatform = p; } });
+    var avg = function(arr) { return arr.length ? (arr.reduce(function(a,b){return a+b;},0) / arr.length) : null; };
+    var avgGrade = avg(gradeVals);
+    var avgMeta = avg(metaVals);
+    return { total: total, byYear: byYear, favPlatform: favPlatform, favCount: favCount, avgGrade: avgGrade, avgMeta: avgMeta };
+  }
+
+  function renderStats(games) {
+    var s = computeStats(games);
+    var cards = [
+      { num: s.total, lbl: 'jogos zerados' },
+      { num: s.favPlatform + (s.favCount ? ' (' + s.favCount + ')' : ''), lbl: 'plataforma favorita' },
+      { num: s.avgGrade !== null ? s.avgGrade.toFixed(1) : '—', lbl: 'sua nota média (0–10)' },
+      { num: s.avgMeta !== null ? s.avgMeta.toFixed(0) : '—', lbl: 'metascore médio' }
+    ];
+    els.stats.innerHTML = cards.map(function(c) {
+      return '<div class="stat"><div class="num">' + esc(c.num) + '</div><div class="lbl">' + esc(c.lbl) + '</div></div>';
+    }).join('');
+
+    var years = Object.keys(s.byYear).sort();
+    var max = years.reduce(function(m, y) { return Math.max(m, s.byYear[y]); }, 1);
+    els.chartRow.innerHTML = years.map(function(y) {
+      var h = Math.max(6, Math.round((s.byYear[y] / max) * 56));
+      return '<div class="chart-col">' +
+        '<div class="chart-n">' + s.byYear[y] + '</div>' +
+        '<div class="chart-bar" style="height:' + h + 'px"></div>' +
+        '<div class="chart-y">' + y.slice(2) + '</div>' +
+        '</div>';
+    }).join('') || '<div style="color:var(--text-faint);font-size:12px;">sem dados de data ainda</div>';
+  }
+
+  function renderLegend() {
+    els.legendRow.innerHTML = GRADE_ORDER_LIST.map(function(letter) {
+      var gm = GRADE_META[letter];
+      return '<div class="legend-item">' +
+        '<span class="legend-letter" style="color:' + gm.color + ';background:' + gm.bg + '">' + esc(letter) + '</span>' +
+        '<span class="legend-range">' + esc(gm.range) + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  function uniquePlatforms(games) {
+    var set = {};
+    games.forEach(function(g) { if (g.platform) set[g.platform] = true; });
+    return Object.keys(set).sort();
+  }
+
+  function populatePlatformControls(games) {
+    var platforms = uniquePlatforms(games);
+    var current = els.filterPlatform.value || 'all';
+    els.filterPlatform.innerHTML = '<option value="all">Todas as plataformas</option>' +
+      platforms.map(function(p) { return '<option value="' + esc(p) + '">' + esc(p) + '</option>'; }).join('');
+    els.filterPlatform.value = platforms.indexOf(current) >= 0 ? current : 'all';
+    els.platformList.innerHTML = platforms.map(function(p) { return '<option value="' + esc(p) + '">'; }).join('');
+  }
+
+  function getFiltered() {
+    var q = els.search.value.trim().toLowerCase();
+    var plat = els.filterPlatform.value;
+    var sort = els.sortBy.value;
+    var list = state.games.filter(function(g) {
+      if (plat !== 'all' && g.platform !== plat) return false;
+      if (q) {
+        var hay = (g.title + ' ' + (g.comments || '') + ' ' + (g.platform || '')).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+    list.sort(function(a, b) {
+      switch (sort) {
+        case 'date-asc':
+          return (a.finishedDateIso || '9999') < (b.finishedDateIso || '9999') ? -1 : 1;
+        case 'grade-desc':
+          var av = (a.myGradeLetter && GRADE_META[a.myGradeLetter]) ? GRADE_META[a.myGradeLetter].order : -1;
+          var bv = (b.myGradeLetter && GRADE_META[b.myGradeLetter]) ? GRADE_META[b.myGradeLetter].order : -1;
+          return bv - av;
+        case 'metascore-desc':
+          return (typeof b.metascore === 'number' ? b.metascore : -1) - (typeof a.metascore === 'number' ? a.metascore : -1);
+        case 'title-asc':
+          return a.title.localeCompare(b.title, 'pt-BR');
+        case 'date-desc':
+        default:
+          return (b.finishedDateIso || '0000') < (a.finishedDateIso || '0000') ? -1 : 1;
+      }
+    });
+    return list;
+  }
+
+  function renderList() {
+    var list = getFiltered();
+    els.countNote.textContent = list.length + (list.length === 1 ? ' jogo' : ' jogos');
+    if (!list.length) {
+      els.list.innerHTML = '';
+      els.emptyState.style.display = 'block';
+      return;
+    }
+    els.emptyState.style.display = 'none';
+    els.list.innerHTML = list.map(function(g) {
+      var gm = g.myGradeLetter ? GRADE_META[g.myGradeLetter] : null;
+      var gradeHtml = gm
+        ? '<span class="grade-badge" style="color:' + gm.color + ';background:' + gm.bg + '">' + esc(g.myGradeLetter) + '</span>'
+        : '<span class="grade-badge" style="color:var(--text-faint);background:var(--bg-hover)">—</span>';
+      var meta = typeof g.metascore === 'number' ? g.metascore : '—';
+      var user = typeof g.userscore === 'number' ? g.userscore.toFixed(1) : '—';
+      var isOpen = state.openRow === g.id;
+      return '<div class="row' + (isOpen ? ' open' : '') + '" data-id="' + esc(g.id) + '">' +
+        '<div class="row-main">' +
+          (g.platform ? '<span class="plat-tag">' + esc(g.platform) + '</span>' : '') +
+          '<div class="row-title">' + esc(g.title) + (g.isDlc ? '<span class="dlc">DLC</span>' : '') + '</div>' +
+          '<div class="row-date">' + esc(fmtDate(g)) + '</div>' +
+          '<div class="scores">' +
+            gradeHtml +
+            '<span class="score-chip">MC <b>' + meta + '</b></span>' +
+            '<span class="score-chip">Users <b>' + user + '</b></span>' +
+          '</div>' +
+          '<span class="chevron">›</span>' +
+        '</div>' +
+        '<div class="row-detail">' +
+          (g.comments ? '<p class="row-comment">' + esc(g.comments) + '</p>' : '<p class="row-comment" style="font-style:italic;">Sem observações.</p>') +
+          '<div class="row-actions">' +
+            '<button class="btn btn-ghost" data-action="edit" data-id="' + esc(g.id) + '">Editar</button>' +
+            '<button class="btn btn-danger" data-action="delete" data-id="' + esc(g.id) + '">Excluir</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  var PRIORITY_LABEL = { alta: 'Quero muito', media: 'Quero', baixa: 'Sem pressa' };
+
+  function getFilteredBacklog() {
+    var q = els.backlogSearch.value.trim().toLowerCase();
+    return state.backlog.filter(function(b) {
+      if (!q) return true;
+      var hay = (b.title + ' ' + (b.platform || '') + ' ' + (b.note || '')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+  }
+
+  function renderBacklog() {
+    els.tabBacklogCount.textContent = state.backlog.length ? '(' + state.backlog.length + ')' : '';
+    var list = getFilteredBacklog();
+    els.backlogCountNote.textContent = list.length + (list.length === 1 ? ' jogo na fila' : ' jogos na fila');
+    if (!list.length) {
+      els.backlogList.innerHTML = '';
+      els.backlogEmptyState.style.display = 'block';
+      return;
+    }
+    els.backlogEmptyState.style.display = 'none';
+    els.backlogList.innerHTML = list.map(function(b) {
+      var prioHtml = b.priority ? '<span class="priority-badge priority-' + esc(b.priority) + '">' + esc(PRIORITY_LABEL[b.priority] || b.priority) + '</span>' : '';
+      return '<div class="backlog-row" data-id="' + esc(b.id) + '">' +
+        '<div class="backlog-main">' +
+          (b.platform ? '<span class="plat-tag">' + esc(b.platform) + '</span>' : '') +
+          '<div class="backlog-title">' + esc(b.title) + '</div>' +
+          prioHtml +
+          '<div class="backlog-actions">' +
+            '<button class="btn btn-ghost" data-baction="done" data-id="' + esc(b.id) + '">✓ Zerei!</button>' +
+            '<button class="btn btn-ghost" data-baction="edit" data-id="' + esc(b.id) + '">Editar</button>' +
+            '<button class="btn btn-danger" data-baction="delete" data-id="' + esc(b.id) + '">Excluir</button>' +
+          '</div>' +
+        '</div>' +
+        (b.note ? '<div class="backlog-note">' + esc(b.note) + '</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function renderAll() {
+    populatePlatformControls(state.games);
+    renderStats(state.games);
+    renderLegend();
+    renderList();
+    renderBacklog();
+  }
+
+  // ---------- modal ----------
+  function openModal(game) {
+    state.editingId = game ? game.id : null;
+    els.modalTitle.textContent = game ? 'Editar jogo' : 'Novo jogo';
+    els.fTitle.value = game ? game.title : '';
+    els.fPlatform.value = game ? (game.platform || '') : '';
+    els.fDate.value = game ? (game.finishedDateIso || '') : '';
+    els.fMetascore.value = game && typeof game.metascore === 'number' ? game.metascore : '';
+    els.fUserscore.value = game && typeof game.userscore === 'number' ? game.userscore : '';
+    els.fGrade.value = game && game.myGradeLetter ? game.myGradeLetter : '';
+    els.fComments.value = game ? (game.comments || '') : '';
+    els.overlay.classList.add('show');
+    setTimeout(function() { els.fTitle.focus(); }, 30);
+  }
+  function closeModal() {
+    els.overlay.classList.remove('show');
+    state.editingId = null;
+    state.convertingBacklogId = null;
+    els.gameForm.reset();
+  }
+
+  // ---------- local storage persistence ----------
+  function loadGames() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('localStorage read failed', e); }
+    // first run (or corrupted storage): seed from the embedded data
+    return SEED_GAMES.slice();
+  }
+
+  function persistGames() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.games));
+      return true;
+    } catch (e) {
+      console.error('localStorage write failed', e);
+      return false;
+    }
+  }
+
+  function localUpsert(id, data) {
+    var idx = state.games.findIndex(function(g) { return g.id === id; });
+    var merged = idx >= 0 ? Object.assign({}, state.games[idx], data, { id: id }) : Object.assign({ id: id }, data);
+    if (idx >= 0) state.games[idx] = merged; else state.games.push(merged);
+  }
+  function localRemove(id) {
+    state.games = state.games.filter(function(g) { return g.id !== id; });
+  }
+
+  var BACKLOG_STORAGE_KEY = 'jogosZeradosBacklog';
+
+  function loadBacklog() {
+    try {
+      var raw = localStorage.getItem(BACKLOG_STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('localStorage read failed (backlog)', e); }
+    return [];
+  }
+
+  function persistBacklog() {
+    try {
+      localStorage.setItem(BACKLOG_STORAGE_KEY, JSON.stringify(state.backlog));
+      return true;
+    } catch (e) {
+      console.error('localStorage write failed (backlog)', e);
+      return false;
+    }
+  }
+
+  function backlogUpsert(id, data) {
+    var idx = state.backlog.findIndex(function(g) { return g.id === id; });
+    var merged = idx >= 0 ? Object.assign({}, state.backlog[idx], data, { id: id }) : Object.assign({ id: id }, data);
+    if (idx >= 0) state.backlog[idx] = merged; else state.backlog.push(merged);
+  }
+  function backlogRemove(id) {
+    state.backlog = state.backlog.filter(function(g) { return g.id !== id; });
+  }
+
+  function initDb() {
+    state.games = loadGames();
+    state.backlog = loadBacklog();
+    finishLoading();
+  }
+
+  var loadingDone = false;
+  function finishLoading() {
+    if (loadingDone) return;
+    loadingDone = true;
+    els.loadingState.style.display = 'none';
+    els.app.style.display = 'block';
+    renderAll();
+  }
+
+  // ---------- events ----------
+  els.search.addEventListener('input', renderList);
+  els.filterPlatform.addEventListener('change', renderList);
+  els.sortBy.addEventListener('change', renderList);
+
+  els.list.addEventListener('click', function(e) {
+    var actionBtn = e.target.closest('[data-action]');
+    if (actionBtn) {
+      e.stopPropagation();
+      var id = actionBtn.getAttribute('data-id');
+      var game = state.games.find(function(g) { return g.id === id; });
+      if (actionBtn.getAttribute('data-action') === 'edit') {
+        openModal(game);
+      } else if (actionBtn.getAttribute('data-action') === 'delete') {
+        if (confirm('Excluir "' + game.title + '" da lista?')) {
+          deleteGame(id);
+        }
+      }
+      return;
+    }
+    var row = e.target.closest('.row');
+    if (row) {
+      var id2 = row.getAttribute('data-id');
+      state.openRow = state.openRow === id2 ? null : id2;
+      renderList();
+    }
+  });
+
+  // ---------- tabs ----------
+  function switchTab(tab) {
+    var isDone = tab === 'done';
+    els.tabDone.classList.toggle('active', isDone);
+    els.tabBacklog.classList.toggle('active', !isDone);
+    els.app.style.display = isDone ? 'block' : 'none';
+    els.backlogApp.style.display = isDone ? 'none' : 'block';
+  }
+  els.tabDone.addEventListener('click', function() { switchTab('done'); });
+  els.tabBacklog.addEventListener('click', function() { switchTab('backlog'); });
+
+  // ---------- backlog modal ----------
+  function openBacklogModal(item) {
+    state.editingBacklogId = item ? item.id : null;
+    els.backlogModalTitle.textContent = item ? 'Editar item da fila' : 'Adicionar à fila';
+    els.bTitle.value = item ? item.title : '';
+    els.bPlatform.value = item ? (item.platform || '') : '';
+    els.bPriority.value = item ? (item.priority || '') : '';
+    els.bNote.value = item ? (item.note || '') : '';
+    els.backlogOverlay.classList.add('show');
+    setTimeout(function() { els.bTitle.focus(); }, 30);
+  }
+  function closeBacklogModal() {
+    els.backlogOverlay.classList.remove('show');
+    state.editingBacklogId = null;
+    els.backlogForm.reset();
+  }
+
+  function saveBacklogItem(id, data) {
+    setSaveBadge('saving');
+    if (id) {
+      backlogUpsert(id, data);
+    } else {
+      var newId = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      backlogUpsert(newId, data);
+    }
+    renderAll();
+    var ok = persistBacklog();
+    setSaveBadge(ok ? 'idle' : 'err');
+  }
+
+  function deleteBacklogItem(id) {
+    setSaveBadge('saving');
+    backlogRemove(id);
+    renderAll();
+    var ok = persistBacklog();
+    setSaveBadge(ok ? 'idle' : 'err');
+  }
+
+  els.btnAddBacklog.addEventListener('click', function() { openBacklogModal(null); });
+  els.backlogModalClose.addEventListener('click', closeBacklogModal);
+  els.btnBacklogCancel.addEventListener('click', closeBacklogModal);
+  els.backlogOverlay.addEventListener('click', function(e) { if (e.target === els.backlogOverlay) closeBacklogModal(); });
+  els.backlogSearch.addEventListener('input', renderBacklog);
+
+  els.backlogForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var title = els.bTitle.value.trim();
+    if (!title) return;
+    var data = {
+      title: title,
+      platform: els.bPlatform.value.trim() || null,
+      priority: els.bPriority.value || null,
+      note: els.bNote.value.trim() || null
+    };
+    saveBacklogItem(state.editingBacklogId, data);
+    closeBacklogModal();
+  });
+
+  els.backlogList.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-baction]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-id');
+    var item = state.backlog.find(function(b) { return b.id === id; });
+    if (!item) return;
+    var action = btn.getAttribute('data-baction');
+    if (action === 'edit') {
+      openBacklogModal(item);
+    } else if (action === 'delete') {
+      if (confirm('Remover "' + item.title + '" da fila?')) deleteBacklogItem(id);
+    } else if (action === 'done') {
+      // move into the "zerados" form, prefilled — removed from the backlog only after it's actually saved
+      state.convertingBacklogId = id;
+      switchTab('done');
+      openModal(null);
+      els.fTitle.value = item.title;
+      els.fPlatform.value = item.platform || '';
+      els.fDate.value = new Date().toISOString().slice(0, 10);
+      els.modalTitle.textContent = 'Marcar "' + item.title + '" como zerado';
+    }
+  });
+
+  els.btnAdd.addEventListener('click', function() { openModal(null); });
+  els.modalClose.addEventListener('click', closeModal);
+  els.btnCancel.addEventListener('click', closeModal);
+  els.overlay.addEventListener('click', function(e) { if (e.target === els.overlay) closeModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && els.overlay.classList.contains('show')) closeModal(); });
+
+  els.gameForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var title = els.fTitle.value.trim();
+    if (!title) return;
+    var data = {
+      title: title,
+      platform: els.fPlatform.value.trim() || null,
+      finishedDateIso: els.fDate.value || null,
+      finishedDateRaw: null,
+      metascore: els.fMetascore.value !== '' ? Number(els.fMetascore.value) : null,
+      userscore: els.fUserscore.value !== '' ? Number(els.fUserscore.value) : null,
+      myGradeLetter: els.fGrade.value || null,
+      comments: els.fComments.value.trim() || null,
+      isDlc: /dlc/i.test(title)
+    };
+    var convertingId = state.convertingBacklogId;
+    saveGame(state.editingId, data);
+    if (convertingId) {
+      backlogRemove(convertingId);
+      persistBacklog();
+      renderBacklog();
+    }
+    closeModal();
+  });
+
+  function saveGame(id, data) {
+    setSaveBadge('saving');
+    if (id) {
+      localUpsert(id, data);
+    } else {
+      var newId = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      localUpsert(newId, data);
+    }
+    renderAll();
+    var ok = persistGames();
+    setSaveBadge(ok ? 'idle' : 'err');
+  }
+
+  function deleteGame(id) {
+    setSaveBadge('saving');
+    localRemove(id);
+    state.openRow = null;
+    renderAll();
+    var ok = persistGames();
+    setSaveBadge(ok ? 'idle' : 'err');
+  }
+
+  // ---------- installable app (manifest + beforeinstallprompt) ----------
+  (function setupInstallable() {
+    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">' +
+      '<rect width="512" height="512" rx="96" fill="#14151b"/>' +
+      '<rect x="128" y="192" width="256" height="144" rx="40" fill="#f2b632"/>' +
+      '<rect x="168" y="232" width="24" height="64" fill="#14151b"/>' +
+      '<rect x="144" y="256" width="64" height="24" fill="#14151b"/>' +
+      '<circle cx="300" cy="248" r="16" fill="#14151b"/>' +
+      '<circle cx="340" cy="280" r="16" fill="#14151b"/>' +
+      '</svg>';
+    var iconUrl = 'data:image/svg+xml,' + encodeURIComponent(iconSvg);
+    var manifest = {
+      name: 'Jogos Zerados',
+      short_name: 'Jogos Zerados',
+      start_url: location.href,
+      scope: location.href,
+      display: 'standalone',
+      background_color: '#14151b',
+      theme_color: '#14151b',
+      icons: [
+        { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+        { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any' }
+      ]
+    };
+    try {
+      var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      var manifestUrl = URL.createObjectURL(blob);
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestUrl;
+      document.head.appendChild(link);
+      var appleIcon = document.createElement('link');
+      appleIcon.rel = 'apple-touch-icon';
+      appleIcon.href = iconUrl;
+      document.head.appendChild(appleIcon);
+    } catch (e) { console.error('manifest setup failed', e); }
+
+    var deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+    window.addEventListener('appinstalled', function() {
+      deferredPrompt = null;
+    });
+
+    els.btnInstall.addEventListener('click', function() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.finally(function() { deferredPrompt = null; });
+      } else {
+        els.installOverlay.classList.add('show');
+      }
+    });
+    els.installModalClose.addEventListener('click', function() { els.installOverlay.classList.remove('show'); });
+    els.installModalOk.addEventListener('click', function() { els.installOverlay.classList.remove('show'); });
+    els.installOverlay.addEventListener('click', function(e) { if (e.target === els.installOverlay) els.installOverlay.classList.remove('show'); });
+  })();
+
+  // ---------- export to Excel ----------
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function todayStamp() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  async function exportExcel() {
+    if (typeof XLSX === 'undefined') { alert('Não foi possível carregar o gerador de Excel. Tente novamente.'); return; }
+    var rows = state.games.slice().sort(function(a, b) {
+      return (a.finishedDateIso || '9999') < (b.finishedDateIso || '9999') ? -1 : 1;
+    }).map(function(g) {
+      return {
+        'Título': g.title,
+        'Plataforma': g.platform || '',
+        'Finalizado em': g.finishedDateIso || g.finishedDateRaw || '',
+        'Metascore': g.metascore !== null && g.metascore !== undefined ? g.metascore : '',
+        'Metascore usuários': g.userscore !== null && g.userscore !== undefined ? g.userscore : '',
+        'Minha avaliação': g.myGradeRaw || g.myGradeLetter || '',
+        'Observações': g.comments || ''
+      };
+    });
+    var ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 36 }, { wch: 18 }, { wch: 13 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 40 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Jogos Zerados');
+    var buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var filename = 'jogos-zerados-' + todayStamp() + '.xlsx';
+    if (window.claude) {
+      try {
+        var downloads = await window.claude.use('downloads');
+        if (downloads) {
+          await downloads.save({ filename: filename, data: blob });
+          return;
+        }
+      } catch (e) { console.error('download via capability failed', e); }
+    }
+    // fallback: plain anchor download (works when opened as a normal tab)
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  // ---------- backup / restore (JSON) ----------
+  async function backupJson() {
+    var data = JSON.stringify(state.games, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var filename = 'jogos-zerados-backup-' + todayStamp() + '.json';
+    try {
+      var downloads = window.claude ? await window.claude.use('downloads') : null;
+      if (downloads) {
+        await downloads.save({ filename: filename, data: blob });
+        return;
+      }
+    } catch (e) { console.error('backup download failed', e); }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  function restoreFromFile(file) {
+    var reader = new FileReader();
+    reader.onload = async function() {
+      var parsed;
+      try { parsed = JSON.parse(reader.result); } catch (e) {
+        alert('Arquivo inválido: não é um JSON de backup reconhecível.');
+        return;
+      }
+      if (!Array.isArray(parsed)) { alert('Arquivo inválido: esperava uma lista de jogos.'); return; }
+      var ok = confirm('Restaurar ' + parsed.length + ' jogo(s) deste backup? Isso substitui os dados salvos neste navegador.');
+      if (!ok) return;
+      setSaveBadge('saving');
+      try {
+        state.games = parsed;
+        var saved = persistGames();
+        setSaveBadge(saved ? 'idle' : 'err');
+        renderAll();
+        alert('Backup restaurado com sucesso.');
+      } catch (e) {
+        console.error(e);
+        setSaveBadge('err');
+        alert('Ocorreu um erro ao restaurar o backup.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  els.btnExportExcel.addEventListener('click', exportExcel);
+  els.btnBackup.addEventListener('click', backupJson);
+  els.btnRestore.addEventListener('click', function() { els.restoreInput.click(); });
+  els.restoreInput.addEventListener('change', function() {
+    var file = els.restoreInput.files && els.restoreInput.files[0];
+    if (file) restoreFromFile(file);
+    els.restoreInput.value = '';
+  });
+
+  initDb();
+})();
+</script>
+</body>
+</html>
