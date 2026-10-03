@@ -266,7 +266,7 @@
   }
   .games-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 16px;
   }
   .game-card {
@@ -276,7 +276,7 @@
   }
   .game-card:hover { transform: translateY(-3px); border-color: var(--accent-dim); box-shadow: 0 8px 20px rgba(0,0,0,.35); }
   .cover-wrap {
-    aspect-ratio: 3 / 4; position: relative; overflow: hidden;
+    aspect-ratio: 2 / 3; position: relative; overflow: hidden;
     background: linear-gradient(160deg, var(--bg-hover), var(--bg-card));
   }
   .cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -372,7 +372,7 @@
 
   @media (max-width: 520px) {
     .field-row { grid-template-columns: 1fr; }
-    .games-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; }
+    .games-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
   }
 </style>
 </head>
@@ -403,8 +403,6 @@
       <input type="file" id="restoreInput" accept=".json" style="display:none;">
       <button class="util-btn install" id="btnInstall">⭳ Instalar no PC</button>
       <button class="util-btn" id="btnSettings">⚙ Configurações</button>
-      <button class="util-btn" id="btnBulkCovers">🪄 Buscar capas em massa</button>
-      <span class="util-status" id="bulkCoverStatus"></span>
     </div>
   </header>
 
@@ -480,7 +478,7 @@
         </div>
         <div class="search-results" id="rawgResults" style="display:none;"></div>
         <div class="search-status" id="rawgStatus" style="display:none;"></div>
-        <input type="hidden" id="fCoverUrl">
+        <div class="field-hint" id="fCoverHint" style="display:none;"></div>
       </div>
       <div class="field-row">
         <div class="field">
@@ -563,7 +561,7 @@
         </div>
         <div class="search-results" id="rawgResultsBacklog" style="display:none;"></div>
         <div class="search-status" id="rawgStatusBacklog" style="display:none;"></div>
-        <input type="hidden" id="bCoverUrl">
+        <div class="field-hint" id="bCoverHint" style="display:none;"></div>
       </div>
       <div class="field-row">
         <div class="field">
@@ -664,6 +662,28 @@
     setTimeout(function() { input.focus(); }, 50);
   })();
 
+  // ---------- local cover files (covers/<id>.ext) ----------
+  // Sem API, sem CORS: a imagem mora no mesmo repositório do site. Se não
+  // existir, cai no nome do jogo mesmo (sem quebrar o layout).
+  var COVER_EXTS = ['jpeg', 'png', 'webp'];
+  window.__coverFallback = function(img) {
+    var step = parseInt(img.getAttribute('data-step') || '0', 10);
+    var id = img.getAttribute('data-cid');
+    if (step < COVER_EXTS.length) {
+      img.setAttribute('data-step', String(step + 1));
+      img.src = 'covers/' + id + '.' + COVER_EXTS[step];
+    } else {
+      img.style.display = 'none';
+      var fb = img.nextElementSibling;
+      if (fb && fb.classList.contains('cover-fallback')) fb.style.display = 'flex';
+    }
+  };
+  function coverMarkup(id, title) {
+    var safeId = esc(id);
+    return '<img src="covers/' + safeId + '.jpg" data-cid="' + safeId + '" data-step="0" onerror="window.__coverFallback(this)" alt="" loading="lazy">' +
+      '<div class="cover-fallback" style="display:none;">' + esc(title) + '</div>';
+  }
+
   var SEED_GAMES = []; // dados pessoais não ficam no código público — restaure seu backup após o primeiro login
   var STORAGE_KEY = 'jogosZeradosData';
 
@@ -744,13 +764,11 @@
     btnSearchRawg: document.getElementById('btnSearchRawg'),
     rawgResults: document.getElementById('rawgResults'),
     rawgStatus: document.getElementById('rawgStatus'),
-    fCoverUrl: document.getElementById('fCoverUrl'),
+    fCoverHint: document.getElementById('fCoverHint'),
     btnSearchRawgBacklog: document.getElementById('btnSearchRawgBacklog'),
     rawgResultsBacklog: document.getElementById('rawgResultsBacklog'),
     rawgStatusBacklog: document.getElementById('rawgStatusBacklog'),
-    bCoverUrl: document.getElementById('bCoverUrl'),
-    btnBulkCovers: document.getElementById('btnBulkCovers'),
-    bulkCoverStatus: document.getElementById('bulkCoverStatus')
+    bCoverHint: document.getElementById('bCoverHint')
   };
 
   var state = {
@@ -907,9 +925,7 @@
         ? '<span class="cover-grade" style="color:' + gm.color + ';background:' + gm.bg + '">' + esc(g.myGradeLetter) + '</span>'
         : '';
       var meta = typeof g.metascore === 'number' ? g.metascore : null;
-      var coverInner = g.coverUrl
-        ? '<img src="' + esc(g.coverUrl) + '" alt="" loading="lazy">'
-        : '<div class="cover-fallback">' + esc(g.title) + '</div>';
+      var coverInner = coverMarkup(g.id, g.title);
       var tipParts = [];
       if (g.platform) tipParts.push(g.platform);
       tipParts.push(fmtDate(g));
@@ -954,9 +970,7 @@
       var prioHtml = b.priority
         ? '<span class="cover-grade priority-badge ' + esc(prioClass) + '">' + esc(PRIORITY_LABEL[b.priority] || b.priority) + '</span>'
         : '';
-      var coverInner = b.coverUrl
-        ? '<img src="' + esc(b.coverUrl) + '" alt="" loading="lazy">'
-        : '<div class="cover-fallback">' + esc(b.title) + '</div>';
+      var coverInner = coverMarkup(b.id, b.title);
       var tipParts = [];
       if (b.platform) tipParts.push(b.platform);
       if (b.note) tipParts.push(b.note);
@@ -993,7 +1007,13 @@
     els.fUserscore.value = game && typeof game.userscore === 'number' ? game.userscore : '';
     els.fGrade.value = game && game.myGradeLetter ? game.myGradeLetter : '';
     els.fComments.value = game ? (game.comments || '') : '';
-    els.fCoverUrl.value = game ? (game.coverUrl || '') : '';
+    if (game) {
+      els.fCoverHint.style.display = 'block';
+      els.fCoverHint.innerHTML = 'Capa: salve a imagem (da <a href="https://www.steamgriddb.com" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">SteamGridDB</a>) como <code>covers/' + esc(game.id) + '.jpg</code> no repositório.';
+    } else {
+      els.fCoverHint.style.display = 'none';
+      els.fCoverHint.innerHTML = '';
+    }
     els.rawgResults.style.display = 'none';
     els.rawgResults.innerHTML = '';
     els.rawgStatus.style.display = 'none';
@@ -1135,7 +1155,13 @@
     els.bPlatform.value = item ? (item.platform || '') : '';
     els.bPriority.value = item ? (item.priority || '') : '';
     els.bNote.value = item ? (item.note || '') : '';
-    els.bCoverUrl.value = item ? (item.coverUrl || '') : '';
+    if (item) {
+      els.bCoverHint.style.display = 'block';
+      els.bCoverHint.innerHTML = 'Capa: salve a imagem (da <a href="https://www.steamgriddb.com" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">SteamGridDB</a>) como <code>covers/' + esc(item.id) + '.jpg</code> no repositório.';
+    } else {
+      els.bCoverHint.style.display = 'none';
+      els.bCoverHint.innerHTML = '';
+    }
     els.rawgResultsBacklog.style.display = 'none';
     els.rawgResultsBacklog.innerHTML = '';
     els.rawgStatusBacklog.style.display = 'none';
@@ -1183,8 +1209,7 @@
       title: title,
       platform: els.bPlatform.value.trim() || null,
       priority: els.bPriority.value || null,
-      note: els.bNote.value.trim() || null,
-      coverUrl: els.bCoverUrl.value || null
+      note: els.bNote.value.trim() || null
     };
     saveBacklogItem(state.editingBacklogId, data);
     closeBacklogModal();
@@ -1208,7 +1233,6 @@
         els.fTitle.value = item.title;
         els.fPlatform.value = item.platform || '';
         els.fDate.value = new Date().toISOString().slice(0, 10);
-        els.fCoverUrl.value = item.coverUrl || '';
         els.modalTitle.textContent = 'Marcar "' + item.title + '" como zerado';
       }
       return;
@@ -1240,11 +1264,10 @@
       userscore: els.fUserscore.value !== '' ? Number(els.fUserscore.value) : null,
       myGradeLetter: els.fGrade.value || null,
       comments: els.fComments.value.trim() || null,
-      coverUrl: els.fCoverUrl.value || null,
       isDlc: /dlc/i.test(title)
     };
     var convertingId = state.convertingBacklogId;
-    saveGame(state.editingId, data);
+    saveGame(convertingId || state.editingId, data);
     if (convertingId) {
       backlogRemove(convertingId);
       persistBacklog();
@@ -1520,79 +1543,12 @@
     rawgSearch(els.fTitle.value, els.rawgResults, els.rawgStatus, function(it) {
       els.fTitle.value = it.name;
       if (typeof it.metacritic === 'number') els.fMetascore.value = it.metacritic;
-      els.fCoverUrl.value = it.background_image || '';
     });
   });
   els.btnSearchRawgBacklog.addEventListener('click', function() {
     rawgSearch(els.bTitle.value, els.rawgResultsBacklog, els.rawgStatusBacklog, function(it) {
       els.bTitle.value = it.name;
-      els.bCoverUrl.value = it.background_image || '';
     });
-  });
-
-  // ---------- RAWG: bulk fill covers for existing games ----------
-  function rawgQuickLookup(key, title) {
-    var url = 'https://api.rawg.io/api/games?key=' + encodeURIComponent(key) +
-      '&search=' + encodeURIComponent(title) + '&page_size=1';
-    return fetch(url).then(function(res) {
-      if (!res.ok) throw new Error('status ' + res.status);
-      return res.json();
-    }).then(function(data) {
-      var items = (data && data.results) || [];
-      return items[0] || null;
-    });
-  }
-
-  var bulkRunning = false;
-  els.btnBulkCovers.addEventListener('click', function() {
-    if (bulkRunning) return;
-    var key = getRawgKey();
-    if (!key) {
-      alert('Configure sua chave da RAWG em "⚙ Configurações" primeiro.');
-      return;
-    }
-    var targets = state.games.filter(function(g) { return !g.coverUrl; }).map(function(g) { return { item: g, kind: 'game' }; })
-      .concat(state.backlog.filter(function(b) { return !b.coverUrl; }).map(function(b) { return { item: b, kind: 'backlog' }; }));
-    if (!targets.length) {
-      els.bulkCoverStatus.textContent = 'Todos os jogos já têm capa.';
-      return;
-    }
-    var ok = confirm('Buscar capa (e metascore, quando estiver faltando) pra ' + targets.length + ' jogo(s) sem capa — zerados e fila juntos — usando a correspondência mais provável da RAWG? Isso pode levar alguns minutos.');
-    if (!ok) return;
-
-    bulkRunning = true;
-    els.btnBulkCovers.disabled = true;
-    var done = 0, filled = 0, failed = 0;
-
-    function step() {
-      if (done >= targets.length) {
-        bulkRunning = false;
-        els.btnBulkCovers.disabled = false;
-        els.bulkCoverStatus.textContent = 'Concluído: ' + filled + ' capa(s) preenchida(s)' + (failed ? ', ' + failed + ' não encontrada(s)' : '') + '.';
-        persistGames();
-        persistBacklog();
-        renderAll();
-        return;
-      }
-      var t = targets[done];
-      var g = t.item;
-      els.bulkCoverStatus.textContent = 'Buscando ' + (done + 1) + '/' + targets.length + ': ' + g.title + '…';
-      rawgQuickLookup(key, g.title).then(function(result) {
-        if (result) {
-          if (result.background_image) { g.coverUrl = result.background_image; filled++; }
-          if (t.kind === 'game' && g.metascore === null && typeof result.metacritic === 'number') g.metascore = result.metacritic;
-        } else {
-          failed++;
-        }
-      }).catch(function(err) {
-        console.error('bulk lookup failed for', g.title, err);
-        failed++;
-      }).finally(function() {
-        done++;
-        setTimeout(step, 350); // be gentle with the free API rate limit
-      });
-    }
-    step();
   });
 
   initDb();
