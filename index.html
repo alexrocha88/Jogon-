@@ -124,6 +124,31 @@
   .priority-media { color: var(--teal); background: rgba(94,200,192,.14); }
   .priority-baixa { color: var(--text-muted); background: rgba(146,150,168,.12); }
 
+  /* ---- Cover thumbnails ---- */
+  .row-cover, .backlog-cover {
+    width: 36px; height: 48px; object-fit: cover; border-radius: 5px;
+    flex-shrink: 0; background: var(--bg-hover); border: 1px solid var(--line);
+  }
+
+  /* ---- RAWG search ---- */
+  .title-row { display: flex; gap: 6px; }
+  .title-row input { flex: 1; }
+  .search-results {
+    margin-top: 8px; display: flex; flex-direction: column; gap: 4px;
+    max-height: 240px; overflow-y: auto; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px; background: var(--bg-card);
+  }
+  .search-result-item {
+    display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 6px;
+    cursor: pointer; border: 1px solid transparent;
+  }
+  .search-result-item:hover { background: var(--bg-hover); border-color: var(--line); }
+  .search-result-item img { width: 36px; height: 36px; object-fit: cover; border-radius: 5px; background: var(--bg-hover); flex-shrink: 0; }
+  .sr-info { min-width: 0; }
+  .sr-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sr-meta { font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); }
+  .search-status { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+
   /* ---- Stats strip ---- */
   .stats {
     display: grid;
@@ -323,6 +348,7 @@
       <button class="util-btn" id="btnRestore">⬆ Restaurar backup</button>
       <input type="file" id="restoreInput" accept=".json" style="display:none;">
       <button class="util-btn install" id="btnInstall">⭳ Instalar no PC</button>
+      <button class="util-btn" id="btnSettings">⚙ Configurações</button>
     </div>
   </header>
 
@@ -392,7 +418,13 @@
     <form id="gameForm">
       <div class="field">
         <label for="fTitle">Título</label>
-        <input type="text" id="fTitle" required autocomplete="off">
+        <div class="title-row">
+          <input type="text" id="fTitle" required autocomplete="off">
+          <button type="button" class="btn btn-ghost" id="btnSearchRawg">🔍 Buscar</button>
+        </div>
+        <div class="search-results" id="rawgResults" style="display:none;"></div>
+        <div class="search-status" id="rawgStatus" style="display:none;"></div>
+        <input type="hidden" id="fCoverUrl">
       </div>
       <div class="field-row">
         <div class="field">
@@ -444,6 +476,23 @@
   </div>
 </div>
 
+<!-- Modal: settings -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <button class="modal-close" id="settingsModalClose" aria-label="Fechar">×</button>
+    <h2>Configurações</h2>
+    <div class="field">
+      <label for="rawgKeyInput">Chave da API RAWG</label>
+      <input type="text" id="rawgKeyInput" placeholder="Cole sua chave aqui" autocomplete="off">
+      <div class="field-hint">Gratuita em <a href="https://rawg.io/apidocs" target="_blank" rel="noopener noreferrer" style="color:var(--teal);">rawg.io/apidocs</a>. Fica salva só neste navegador — ativa o botão "🔍 Buscar" pra achar título, capa e metascore certos.</div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="btnClearRawgKey">Remover chave</button>
+      <button type="button" class="btn btn-accent" id="btnSaveRawgKey">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: backlog add/edit -->
 <div class="overlay" id="backlogOverlay">
   <div class="modal">
@@ -452,7 +501,13 @@
     <form id="backlogForm">
       <div class="field">
         <label for="bTitle">Título</label>
-        <input type="text" id="bTitle" required autocomplete="off">
+        <div class="title-row">
+          <input type="text" id="bTitle" required autocomplete="off">
+          <button type="button" class="btn btn-ghost" id="btnSearchRawgBacklog">🔍 Buscar</button>
+        </div>
+        <div class="search-results" id="rawgResultsBacklog" style="display:none;"></div>
+        <div class="search-status" id="rawgStatusBacklog" style="display:none;"></div>
+        <input type="hidden" id="bCoverUrl">
       </div>
       <div class="field-row">
         <div class="field">
@@ -581,7 +636,21 @@
     bPlatform: document.getElementById('bPlatform'),
     bPriority: document.getElementById('bPriority'),
     bNote: document.getElementById('bNote'),
-    btnBacklogCancel: document.getElementById('btnBacklogCancel')
+    btnBacklogCancel: document.getElementById('btnBacklogCancel'),
+    btnSettings: document.getElementById('btnSettings'),
+    settingsOverlay: document.getElementById('settingsOverlay'),
+    settingsModalClose: document.getElementById('settingsModalClose'),
+    rawgKeyInput: document.getElementById('rawgKeyInput'),
+    btnSaveRawgKey: document.getElementById('btnSaveRawgKey'),
+    btnClearRawgKey: document.getElementById('btnClearRawgKey'),
+    btnSearchRawg: document.getElementById('btnSearchRawg'),
+    rawgResults: document.getElementById('rawgResults'),
+    rawgStatus: document.getElementById('rawgStatus'),
+    fCoverUrl: document.getElementById('fCoverUrl'),
+    btnSearchRawgBacklog: document.getElementById('btnSearchRawgBacklog'),
+    rawgResultsBacklog: document.getElementById('rawgResultsBacklog'),
+    rawgStatusBacklog: document.getElementById('rawgStatusBacklog'),
+    bCoverUrl: document.getElementById('bCoverUrl')
   };
 
   var state = {
@@ -742,6 +811,7 @@
       var isOpen = state.openRow === g.id;
       return '<div class="row' + (isOpen ? ' open' : '') + '" data-id="' + esc(g.id) + '">' +
         '<div class="row-main">' +
+          (g.coverUrl ? '<img class="row-cover" src="' + esc(g.coverUrl) + '" alt="" loading="lazy">' : '') +
           (g.platform ? '<span class="plat-tag">' + esc(g.platform) + '</span>' : '') +
           '<div class="row-title">' + esc(g.title) + (g.isDlc ? '<span class="dlc">DLC</span>' : '') + '</div>' +
           '<div class="row-date">' + esc(fmtDate(g)) + '</div>' +
@@ -788,6 +858,7 @@
       var prioHtml = b.priority ? '<span class="priority-badge priority-' + esc(b.priority) + '">' + esc(PRIORITY_LABEL[b.priority] || b.priority) + '</span>' : '';
       return '<div class="backlog-row" data-id="' + esc(b.id) + '">' +
         '<div class="backlog-main">' +
+          (b.coverUrl ? '<img class="backlog-cover" src="' + esc(b.coverUrl) + '" alt="" loading="lazy">' : '') +
           (b.platform ? '<span class="plat-tag">' + esc(b.platform) + '</span>' : '') +
           '<div class="backlog-title">' + esc(b.title) + '</div>' +
           prioHtml +
@@ -821,6 +892,10 @@
     els.fUserscore.value = game && typeof game.userscore === 'number' ? game.userscore : '';
     els.fGrade.value = game && game.myGradeLetter ? game.myGradeLetter : '';
     els.fComments.value = game ? (game.comments || '') : '';
+    els.fCoverUrl.value = game ? (game.coverUrl || '') : '';
+    els.rawgResults.style.display = 'none';
+    els.rawgResults.innerHTML = '';
+    els.rawgStatus.style.display = 'none';
     els.overlay.classList.add('show');
     setTimeout(function() { els.fTitle.focus(); }, 30);
   }
@@ -957,6 +1032,10 @@
     els.bPlatform.value = item ? (item.platform || '') : '';
     els.bPriority.value = item ? (item.priority || '') : '';
     els.bNote.value = item ? (item.note || '') : '';
+    els.bCoverUrl.value = item ? (item.coverUrl || '') : '';
+    els.rawgResultsBacklog.style.display = 'none';
+    els.rawgResultsBacklog.innerHTML = '';
+    els.rawgStatusBacklog.style.display = 'none';
     els.backlogOverlay.classList.add('show');
     setTimeout(function() { els.bTitle.focus(); }, 30);
   }
@@ -1001,7 +1080,8 @@
       title: title,
       platform: els.bPlatform.value.trim() || null,
       priority: els.bPriority.value || null,
-      note: els.bNote.value.trim() || null
+      note: els.bNote.value.trim() || null,
+      coverUrl: els.bCoverUrl.value || null
     };
     saveBacklogItem(state.editingBacklogId, data);
     closeBacklogModal();
@@ -1026,6 +1106,7 @@
       els.fTitle.value = item.title;
       els.fPlatform.value = item.platform || '';
       els.fDate.value = new Date().toISOString().slice(0, 10);
+      els.fCoverUrl.value = item.coverUrl || '';
       els.modalTitle.textContent = 'Marcar "' + item.title + '" como zerado';
     }
   });
@@ -1049,6 +1130,7 @@
       userscore: els.fUserscore.value !== '' ? Number(els.fUserscore.value) : null,
       myGradeLetter: els.fGrade.value || null,
       comments: els.fComments.value.trim() || null,
+      coverUrl: els.fCoverUrl.value || null,
       isDlc: /dlc/i.test(title)
     };
     var convertingId = state.convertingBacklogId;
@@ -1241,6 +1323,101 @@
     var file = els.restoreInput.files && els.restoreInput.files[0];
     if (file) restoreFromFile(file);
     els.restoreInput.value = '';
+  });
+
+  // ---------- RAWG: settings (API key) ----------
+  var RAWG_KEY_STORAGE = 'rawgApiKey';
+  function getRawgKey() {
+    try { return localStorage.getItem(RAWG_KEY_STORAGE) || ''; } catch (e) { return ''; }
+  }
+  function setRawgKey(key) {
+    try { localStorage.setItem(RAWG_KEY_STORAGE, key); return true; } catch (e) { return false; }
+  }
+
+  els.btnSettings.addEventListener('click', function() {
+    els.rawgKeyInput.value = getRawgKey();
+    els.settingsOverlay.classList.add('show');
+  });
+  els.settingsModalClose.addEventListener('click', function() { els.settingsOverlay.classList.remove('show'); });
+  els.settingsOverlay.addEventListener('click', function(e) { if (e.target === els.settingsOverlay) els.settingsOverlay.classList.remove('show'); });
+  els.btnSaveRawgKey.addEventListener('click', function() {
+    setRawgKey(els.rawgKeyInput.value.trim());
+    els.settingsOverlay.classList.remove('show');
+  });
+  els.btnClearRawgKey.addEventListener('click', function() {
+    setRawgKey('');
+    els.rawgKeyInput.value = '';
+  });
+
+  // ---------- RAWG: search ----------
+  function rawgSearch(query, resultsEl, statusEl, onPick) {
+    var key = getRawgKey();
+    if (!key) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = 'Configure sua chave da RAWG em "⚙ Configurações" pra usar a busca.';
+      resultsEl.style.display = 'none';
+      return;
+    }
+    if (!query || query.trim().length < 2) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = 'Digite ao menos 2 letras do título antes de buscar.';
+      resultsEl.style.display = 'none';
+      return;
+    }
+    statusEl.style.display = 'block';
+    statusEl.textContent = 'Buscando…';
+    resultsEl.style.display = 'none';
+    var url = 'https://api.rawg.io/api/games?key=' + encodeURIComponent(key) +
+      '&search=' + encodeURIComponent(query.trim()) + '&page_size=6';
+    fetch(url).then(function(res) {
+      if (!res.ok) throw new Error('status ' + res.status);
+      return res.json();
+    }).then(function(data) {
+      var items = (data && data.results) || [];
+      if (!items.length) {
+        statusEl.textContent = 'Nenhum resultado encontrado.';
+        return;
+      }
+      statusEl.style.display = 'none';
+      resultsEl.style.display = 'flex';
+      resultsEl.innerHTML = items.map(function(it, idx) {
+        var year = it.released ? it.released.slice(0, 4) : '';
+        var mc = typeof it.metacritic === 'number' ? ' · MC ' + it.metacritic : '';
+        var img = it.background_image ? '<img src="' + esc(it.background_image) + '" alt="" loading="lazy">' : '<img src="" alt="" style="visibility:hidden;">';
+        return '<div class="search-result-item" data-idx="' + idx + '">' +
+          img +
+          '<div class="sr-info">' +
+            '<div class="sr-name">' + esc(it.name) + '</div>' +
+            '<div class="sr-meta">' + esc(year) + mc + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      Array.prototype.forEach.call(resultsEl.querySelectorAll('[data-idx]'), function(el) {
+        el.addEventListener('click', function() {
+          var idx = Number(el.getAttribute('data-idx'));
+          onPick(items[idx]);
+          resultsEl.style.display = 'none';
+          resultsEl.innerHTML = '';
+        });
+      });
+    }).catch(function(err) {
+      console.error('RAWG search failed', err);
+      statusEl.textContent = 'Não foi possível buscar agora (chave inválida ou sem conexão).';
+    });
+  }
+
+  els.btnSearchRawg.addEventListener('click', function() {
+    rawgSearch(els.fTitle.value, els.rawgResults, els.rawgStatus, function(it) {
+      els.fTitle.value = it.name;
+      if (typeof it.metacritic === 'number') els.fMetascore.value = it.metacritic;
+      els.fCoverUrl.value = it.background_image || '';
+    });
+  });
+  els.btnSearchRawgBacklog.addEventListener('click', function() {
+    rawgSearch(els.bTitle.value, els.rawgResultsBacklog, els.rawgStatusBacklog, function(it) {
+      els.bTitle.value = it.name;
+      els.bCoverUrl.value = it.background_image || '';
+    });
   });
 
   initDb();
