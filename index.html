@@ -126,7 +126,7 @@
 
   /* ---- Cover thumbnails ---- */
   .backlog-cover {
-    width: 36px; height: 48px; object-fit: cover; border-radius: 5px;
+    width: 56px; height: 74px; object-fit: cover; border-radius: 6px;
     flex-shrink: 0; background: var(--bg-hover); border: 1px solid var(--line);
   }
 
@@ -310,6 +310,12 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 68%;
   }
   .card-mc { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-faint); white-space: nowrap; }
+  .card-done-btn {
+    width: 100%; margin-top: 8px; font-family: inherit; font-size: 11.5px; font-weight: 600;
+    padding: 6px 0; border-radius: 6px; border: 1px solid var(--accent-dim);
+    background: transparent; color: var(--accent); cursor: pointer;
+  }
+  .card-done-btn:hover { background: rgba(255,107,74,.12); }
   .empty {
     text-align: center; padding: 60px 20px; color: var(--text-faint);
   }
@@ -452,7 +458,7 @@
     </div>
     <div class="count-note" id="backlogCountNote"></div>
 
-    <div class="backlog-list" id="backlogList"></div>
+    <div class="games-grid" id="backlogList"></div>
     <div class="empty" id="backlogEmptyState" style="display:none;">
       <div class="big">Sua fila está vazia</div>
       <div>Adicione os próximos jogos que você pretende zerar.</div>
@@ -944,20 +950,26 @@
     }
     els.backlogEmptyState.style.display = 'none';
     els.backlogList.innerHTML = list.map(function(b) {
-      var prioHtml = b.priority ? '<span class="priority-badge priority-' + esc(b.priority) + '">' + esc(PRIORITY_LABEL[b.priority] || b.priority) + '</span>' : '';
-      return '<div class="backlog-row" data-id="' + esc(b.id) + '">' +
-        '<div class="backlog-main">' +
-          (b.coverUrl ? '<img class="backlog-cover" src="' + esc(b.coverUrl) + '" alt="" loading="lazy">' : '') +
-          (b.platform ? '<span class="plat-tag">' + esc(b.platform) + '</span>' : '') +
-          '<div class="backlog-title">' + esc(b.title) + '</div>' +
-          prioHtml +
-          '<div class="backlog-actions">' +
-            '<button class="btn btn-ghost" data-baction="done" data-id="' + esc(b.id) + '">✓ Zerei!</button>' +
-            '<button class="btn btn-ghost" data-baction="edit" data-id="' + esc(b.id) + '">Editar</button>' +
-            '<button class="btn btn-danger" data-baction="delete" data-id="' + esc(b.id) + '">Excluir</button>' +
+      var prioClass = b.priority ? 'priority-' + b.priority : '';
+      var prioHtml = b.priority
+        ? '<span class="cover-grade priority-badge ' + esc(prioClass) + '">' + esc(PRIORITY_LABEL[b.priority] || b.priority) + '</span>'
+        : '';
+      var coverInner = b.coverUrl
+        ? '<img src="' + esc(b.coverUrl) + '" alt="" loading="lazy">'
+        : '<div class="cover-fallback">' + esc(b.title) + '</div>';
+      var tipParts = [];
+      if (b.platform) tipParts.push(b.platform);
+      if (b.note) tipParts.push(b.note);
+      return '<div class="game-card" data-id="' + esc(b.id) + '" title="' + esc(tipParts.join(' — ')) + '">' +
+        '<button class="card-delete" data-baction="delete" data-id="' + esc(b.id) + '" aria-label="Excluir">×</button>' +
+        '<div class="cover-wrap">' + coverInner + prioHtml + '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-title">' + esc(b.title) + '</div>' +
+          '<div class="card-meta-row">' +
+            '<span class="card-plat">' + esc(b.platform || '') + '</span>' +
           '</div>' +
+          '<button class="card-done-btn" data-baction="done" data-id="' + esc(b.id) + '">✓ Zerei!</button>' +
         '</div>' +
-        (b.note ? '<div class="backlog-note">' + esc(b.note) + '</div>' : '') +
       '</div>';
     }).join('');
   }
@@ -1180,25 +1192,32 @@
 
   els.backlogList.addEventListener('click', function(e) {
     var btn = e.target.closest('[data-baction]');
-    if (!btn) return;
-    var id = btn.getAttribute('data-id');
-    var item = state.backlog.find(function(b) { return b.id === id; });
-    if (!item) return;
-    var action = btn.getAttribute('data-baction');
-    if (action === 'edit') {
-      openBacklogModal(item);
-    } else if (action === 'delete') {
-      if (confirm('Remover "' + item.title + '" da fila?')) deleteBacklogItem(id);
-    } else if (action === 'done') {
-      // move into the "zerados" form, prefilled — removed from the backlog only after it's actually saved
-      state.convertingBacklogId = id;
-      switchTab('done');
-      openModal(null);
-      els.fTitle.value = item.title;
-      els.fPlatform.value = item.platform || '';
-      els.fDate.value = new Date().toISOString().slice(0, 10);
-      els.fCoverUrl.value = item.coverUrl || '';
-      els.modalTitle.textContent = 'Marcar "' + item.title + '" como zerado';
+    if (btn) {
+      e.stopPropagation();
+      var id = btn.getAttribute('data-id');
+      var item = state.backlog.find(function(b) { return b.id === id; });
+      if (!item) return;
+      var action = btn.getAttribute('data-baction');
+      if (action === 'delete') {
+        if (confirm('Remover "' + item.title + '" da fila?')) deleteBacklogItem(id);
+      } else if (action === 'done') {
+        // move into the "zerados" form, prefilled — removed from the backlog only after it's actually saved
+        state.convertingBacklogId = id;
+        switchTab('done');
+        openModal(null);
+        els.fTitle.value = item.title;
+        els.fPlatform.value = item.platform || '';
+        els.fDate.value = new Date().toISOString().slice(0, 10);
+        els.fCoverUrl.value = item.coverUrl || '';
+        els.modalTitle.textContent = 'Marcar "' + item.title + '" como zerado';
+      }
+      return;
+    }
+    var card = e.target.closest('.game-card');
+    if (card) {
+      var cid = card.getAttribute('data-id');
+      var it = state.backlog.find(function(b) { return b.id === cid; });
+      if (it) openBacklogModal(it);
     }
   });
 
@@ -1532,12 +1551,13 @@
       alert('Configure sua chave da RAWG em "⚙ Configurações" primeiro.');
       return;
     }
-    var targets = state.games.filter(function(g) { return !g.coverUrl; });
+    var targets = state.games.filter(function(g) { return !g.coverUrl; }).map(function(g) { return { item: g, kind: 'game' }; })
+      .concat(state.backlog.filter(function(b) { return !b.coverUrl; }).map(function(b) { return { item: b, kind: 'backlog' }; }));
     if (!targets.length) {
       els.bulkCoverStatus.textContent = 'Todos os jogos já têm capa.';
       return;
     }
-    var ok = confirm('Buscar capa (e metascore, quando estiver faltando) pra ' + targets.length + ' jogo(s) sem capa, usando a correspondência mais provável da RAWG? Isso pode levar alguns minutos.');
+    var ok = confirm('Buscar capa (e metascore, quando estiver faltando) pra ' + targets.length + ' jogo(s) sem capa — zerados e fila juntos — usando a correspondência mais provável da RAWG? Isso pode levar alguns minutos.');
     if (!ok) return;
 
     bulkRunning = true;
@@ -1550,15 +1570,17 @@
         els.btnBulkCovers.disabled = false;
         els.bulkCoverStatus.textContent = 'Concluído: ' + filled + ' capa(s) preenchida(s)' + (failed ? ', ' + failed + ' não encontrada(s)' : '') + '.';
         persistGames();
+        persistBacklog();
         renderAll();
         return;
       }
-      var g = targets[done];
+      var t = targets[done];
+      var g = t.item;
       els.bulkCoverStatus.textContent = 'Buscando ' + (done + 1) + '/' + targets.length + ': ' + g.title + '…';
       rawgQuickLookup(key, g.title).then(function(result) {
         if (result) {
           if (result.background_image) { g.coverUrl = result.background_image; filled++; }
-          if (g.metascore === null && typeof result.metacritic === 'number') g.metascore = result.metacritic;
+          if (t.kind === 'game' && g.metascore === null && typeof result.metacritic === 'number') g.metascore = result.metacritic;
         } else {
           failed++;
         }
